@@ -1,3 +1,7 @@
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![Django](https://img.shields.io/badge/Django-6.x-success)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
+![License](https://img.shields.io/badge/License-Acad%C3%A9mico-lightgrey)
 # Sistema de Gestión de Inventario y Pedidos
 
 Prototipo web desarrollado como trabajo de titulación para la carrera de Ingeniería en Sistemas de Información.
