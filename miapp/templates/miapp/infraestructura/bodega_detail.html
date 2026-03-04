@@ -1,0 +1,153 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <h5 class="dash-subtitle">Infraestructura > Sedes</h5>
+            <h3 class="dash-title">{{ bodega.nombre }}</h3>
+            <p class="text-muted small"><i class="bi bi-geo-alt"></i> {{ bodega.direccion|default:"Dirección no registrada" }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'miapp:bodegas_gestion' %}" class="btn-chip" style="background: var(--bg-main);">
+                <i class="bi bi-arrow-left me-1"></i> Volver
+            </a>
+            <a href="{% url 'miapp:zona_crear' %}?bodega={{ bodega.id }}" class="btn-chip" style="background-color: var(--accent-blue); color: white; border: none;">
+                <i class="bi bi-plus-lg me-1"></i> Añadir Zona
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card-soft p-3 d-flex align-items-center gap-3">
+                <div class="icon-circle bg-primary-subtle text-primary">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0 fw-bold">{{ zonas.count }}</h4>
+                    <small class="text-muted">Zonas Totales</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card-soft p-3 d-flex align-items-center gap-3">
+                <div class="icon-circle bg-success-subtle text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0 fw-bold">{% if bodega.es_activo %}Activa{% else %}Inactiva{% endif %}</h4>
+                    <small class="text-muted">Estado Operativo</small>
+                </div>
+            </div>
+        </div>
+        
+        
+    </div>
+
+    <div class="table-card">
+        <div class="card-header-compact">
+            <div class="h-title">Zonas de Almacenamiento Internas</div>
+            <div class="h-sub">Distribución lógica de la bodega</div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th class="ps-4">CÓDIGO</th>
+                        <th>NOMBRE DE LA ZONA</th>
+                        <th>TIPO DE CARGA</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-end pe-4">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for zona in zonas %}
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <span class="badge-soft fw-bold" style="background: #f0f0f5; color: #333;">
+                                    {{ zona.codigo }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-main">{{ zona.nombre }}</div>
+                                <small class="text-muted">Sede: {{ bodega.nombre }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="small fw-bold text-primary">{{ zona.tipo_almacenamiento.nombre }}</span>
+                                    <span class="small text-muted">{{ zona.tipo_almacenamiento.codigo }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if zona.es_activo %}
+                                    <span class="badge-soft" style="background:#e9f7ef; color:#0f5132;">Activo</span>
+                                {% else %}
+                                    <span class="badge-soft" style="background:#ffecec; color:#842029;">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    
+                                    <a href="{% url 'miapp:zona_detalle' zona.pk %}" class="btn-chip" title="Gestionar Racks">
+                                        <i class="bi bi-stack"></i>
+                                    </a>
+
+                                    <a href="{% url 'miapp:zona_editar' zona.pk %}" class="btn-chip" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <a href="{% url 'miapp:mapa_distribucion' %}?bodega={{ bodega.id }}&zona={{ zona.id }}" 
+                                       class="btn-chip" 
+                                       title="Ver Mapa de esta Zona" 
+                                       style="color: var(--accent-blue); background-color: #f0f8ff; border-color: #cce5ff;">
+                                        <i class="bi bi-map-fill me-1"></i> Ver Mapa
+                                    </a>
+
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 muted">
+                                <i class="bi bi-folder-x fs-1 d-block mb-2"></i>
+                                No hay zonas configuradas en esta sede.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    .hover-card:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        transition: all 0.2s;
+        border-color: var(--accent-blue) !important;
+    }
+    .badge-soft {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}

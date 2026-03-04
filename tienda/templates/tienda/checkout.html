@@ -1,0 +1,151 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Radio Cards (Tarjetas seleccionables) */
+    .selector-card {
+        border: 2px solid #eaeaea; border-radius: 8px; padding: 15px;
+        cursor: pointer; transition: 0.2s; position: relative;
+        display: flex; align-items: start; gap: 10px; margin-bottom: 10px;
+    }
+    .selector-card:hover { border-color: #ccc; }
+    
+    /* Cuando el radio está seleccionado */
+    .selector-input:checked + .selector-card {
+        border-color: #000; background-color: #fffbf0;
+    }
+    
+    .selector-input { display: none; } /* Ocultar el radio button feo */
+
+    .section-head { font-weight: 800; font-size: 1.1rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    
+    /* Resumen Lateral */
+    .checkout-summary {
+        background: #f9f9f9; padding: 25px; border-radius: 12px; position: sticky; top: 100px;
+    }
+    .total-row { font-size: 1.3rem; font-weight: 800; border-top: 1px solid #ddd; margin-top: 15px; padding-top: 15px; }
+    
+    .btn-pay {
+        background: #000; color: #fff; width: 100%; padding: 15px; font-weight: 700;
+        border: none; border-radius: 8px; font-size: 1rem; margin-top: 20px; transition: 0.2s;
+    }
+    .btn-pay:hover { background: #333; transform: scale(1.01); }
+</style>
+
+<div class="container py-5">
+    <h1 class="fw-bold mb-4">Finalizar Compra</h1>
+
+    <form method="POST" action="{% url 'tienda:procesar_compra' %}">
+        {% csrf_token %}
+        
+        <div class="row g-5">
+            <div class="col-lg-7">
+                
+                <div class="mb-5">
+                    <div class="section-head"><span class="material-icons-round">place</span> Dirección de Envío</div>
+                    
+                    {% if direcciones %}
+                        {% for dir in direcciones %}
+                        <label class="w-100">
+                            <input type="radio" name="direccion_id" value="{{ dir.id }}" class="selector-input" {% if dir.es_principal %}checked{% endif %} required>
+                            <div class="selector-card">
+                                <span class="material-icons-round fs-5 mt-1 text-muted">radio_button_checked</span>
+                                <div>
+                                    <div class="fw-bold">{{ dir.nombre_destinatario }}</div>
+                                    <div class="small text-muted">{{ dir.calle_principal }} y {{ dir.calle_secundaria }}</div>
+                                    <div class="small text-muted">{{ dir.ciudad }} - Tel: {{ dir.telefono }}</div>
+                                </div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            No tienes direcciones guardadas. 
+                            <a href="{% url 'tienda:mi_perfil' %}" class="fw-bold text-dark">Ir a agregar una</a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-5">
+                    <div class="section-head"><span class="material-icons-round">credit_card</span> Método de Pago</div>
+                    
+                    {% if tarjetas %}
+                        {% for card in tarjetas %}
+                        <label class="w-100">
+                            <input type="radio" name="pago_id" value="{{ card.id }}" class="selector-input" {% if card.es_predeterminado %}checked{% endif %} required>
+                            <div class="selector-card">
+                                <span class="material-icons-round fs-5 mt-1 text-muted">radio_button_checked</span>
+                                <div class="d-flex justify-content-between w-100 align-items-center pe-3">
+                                    <div>
+                                        <div class="fw-bold">{{ card.get_tipo_display }} **** {{ card.ultimos_digitos }}</div>
+                                        <div class="small text-muted">{{ card.nombre_titular }} | Exp: {{ card.fecha_vencimiento }}</div>
+                                    </div>
+                                    <span class="fw-bold fst-italic text-muted" style="font-size: 1.2rem;">{{ card.tipo }}</span>
+                                </div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            No tienes tarjetas registradas. 
+                            <a href="{% url 'tienda:mi_perfil' %}" class="fw-bold text-dark">Ir a agregar una</a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div class="section-head"><span class="material-icons-round">shopping_bag</span> Revisar Productos</div>
+                    <div class="bg-light p-3 rounded">
+                        {% for item in items %}
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span>{{ item.cantidad }}x {{ item.producto.nombre }}</span>
+                            <span class="fw-bold">${{ item.subtotal }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-5">
+                <div class="checkout-summary">
+                    <h4 class="fw-bold mb-3">Resumen de Orden</h4>
+                    
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>Subtotal</span>
+                        <span>${{ carrito.total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>Envío</span>
+                        <span class="text-success fw-bold">Gratis</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>Impuestos</span>
+                        <span>Incluido</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between total-row">
+                        <span>Total a Pagar</span>
+                        <span>${{ carrito.total }}</span>
+                    </div>
+
+                    {% if direcciones and tarjetas %}
+                        <button type="submit" class="btn-pay">
+                            CONFIRMAR Y PAGAR
+                        </button>
+                        <p class="text-center mt-3 small text-muted">
+                            <span class="material-icons-round fs-6" style="vertical-align: text-bottom;">lock</span> 
+                            Pago procesado de forma segura.
+                        </p>
+                    {% else %}
+                        <button type="button" class="btn-pay" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            Completa tus datos primero
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

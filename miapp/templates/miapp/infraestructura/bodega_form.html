@@ -1,0 +1,105 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    <div class="dash-header mt-3">
+        <div>
+            <h5 class="dash-subtitle">Infraestructura > Sedes</h5>
+            <h3 class="dash-title">{{ titulo }}</h3>
+        </div>
+        <a href="{% url 'miapp:bodegas_gestion' %}" class="btn-chip" style="background: var(--bg-main);">
+            <i class="bi bi-arrow-left me-1"></i> Cancelar y Volver
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-soft shadow-sm border-0 p-4">
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">
+                                <i class="bi bi-building-gear me-2"></i>Información General
+                            </h6>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="dash-subtitle mb-1">Nombre de la Sede/Bodega</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">{{ form.nombre.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="dash-subtitle mb-1">Estado Operativo</label>
+                            <div class="form-check form-switch mt-2">
+                                {{ form.es_activo }}
+                                <label class="form-check-label small text-muted" for="{{ form.es_activo.id_for_label }}">
+                                    Activo para operaciones
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">
+                                <i class="bi bi-geo-alt-fill me-2"></i>Ubicación y Referencias
+                            </h6>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="dash-subtitle mb-1">Dirección Física</label>
+                            {{ form.direccion }}
+                            <div class="form-text small">Dirección completa para guías de remisión.</div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="dash-subtitle mb-1">Referencia / Descripción Adicional</label>
+                            {{ form.referencia }}
+                        </div>
+
+                        <div class="col-12 mt-5">
+                            <div class="d-flex justify-content-end gap-2 p-3 bg-light rounded border">
+                                <button type="reset" class="btn btn-light border px-4">
+                                    Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                                    <i class="bi bi-save me-2"></i> {{ modo }} Bodega
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="alert alert-info mt-4 border-0 shadow-sm d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div class="small">
+                    <strong>Nota de Jerarquía:</strong> Al crear esta sede, podrá configurar sus zonas lógicas, racks y niveles de almacenamiento desde la vista de detalle.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos para que coincidan con tu catálogo */
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid var(--border-soft);
+        padding: 0.6rem;
+        font-size: 0.95rem;
+    }
+    .form-control:focus {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+    .text-primary { color: var(--accent-blue) !important; }
+</style>
+{% endblock %}

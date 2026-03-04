@@ -1,0 +1,201 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-4 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="dash-subtitle text-muted text-uppercase ls-1" style="font-size: 0.75rem;">Operaciones</h5>
+            <h3 class="dash-title fw-bold text-dark">Despacho de Pedidos</h3>
+        </div>
+        <div>
+            <a href="{% url 'miapp:pedido_nuevo' %}" class="btn-chip" style="background-color: #111; color: white; border: none;">
+                <i class="bi bi-plus-lg me-2"></i> Nuevo Pedido ERP
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card-soft mb-4 p-4 bg-white rounded-4 shadow-sm border-0">
+        <form method="get" class="row g-2">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Buscar por código, cliente..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn-chip primary w-100 justify-content-center">Buscar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card bg-white rounded-4 shadow-sm overflow-hidden">
+        <div class="table-responsive">
+            <table class="table-elegant table align-middle mb-0 table-hover">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 border-0">Código</th>
+                        <th class="border-0">Cliente</th>
+                        <th class="border-0 text-end">Total</th>
+                        <th class="text-center border-0">Estado</th>
+                        <th class="text-end pe-4 border-0">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pedidos %}
+                    <tr class="border-bottom border-light">
+                        <td class="ps-4">
+                            <span class="fw-bold text-dark">{{ p.codigo }}</span>
+                            <br><small class="text-muted text-uppercase" style="font-size: 0.65rem;">Canal: {{ p.get_origen_display }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ p.cliente.nombres }} {{ p.cliente.apellidos }}</div>
+                            <small class="text-muted">{{ p.cliente.numero_identificacion }}</small>
+                        </td>
+                        <td class="text-end fw-bold">${{ p.total }}</td>
+                        <td class="text-center">
+                            <span class="badge {% if 'PARCIAL' in p.estado_pedido.codigo %}bg-info{% else %}bg-warning text-dark{% endif %} rounded-pill px-3">
+                                {{ p.estado_pedido.descripcion }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if mi_bodega or es_admin %}
+                                <button type="button" class="btn btn-dark btn-sm rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalDespacho{{ p.id }}">
+                                    <i class="bi bi-box-seam-fill me-1"></i> Autorizar Salida
+                                </button>
+
+                                <div class="modal fade" id="modalDespacho{{ p.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content border-0 shadow rounded-4 text-start">
+                                            <div class="modal-header border-bottom pb-3">
+                                                <h5 class="modal-title fw-bold">Guía de Picking Localizada</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="pedido_id" value="{{ p.id }}">
+                                                
+                                                <div class="modal-body bg-light-subtle">
+                                                    <div class="alert alert-dark d-flex align-items-center py-3 mb-4 border-0 bg-dark text-white rounded-3">
+                                                        <i class="bi bi-geo-fill me-3 fs-3 text-success"></i>
+                                                        <div>
+                                                            <div class="fw-bold">Instrucciones de Extracción</div>
+                                                            <small class="text-white-50">Localice los lotes en las coordenadas (Zona, Rack, Nivel) indicadas a continuación.</small>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="stock-plan" style="max-height: 450px; overflow-y: auto;">
+                                                        {% for item in p.simular_plan_despacho %}
+                                                            <div class="p-3 mb-3 rounded-4 border bg-white shadow-sm">
+                                                                <div class="fw-bold text-dark border-bottom pb-2 mb-3 d-flex justify-content-between align-items-center">
+                                                                    <span><i class="bi bi-box-seam-fill me-2 text-primary"></i> {{ item.producto }}</span>
+                                                                    <span class="badge {% if item.completo %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3">
+                                                                        Pendiente: {{ item.cantidad_pendiente }}
+                                                                    </span>
+                                                                </div>
+                                                                
+                                                                {% for lote in item.lotes %}
+                                                                    {% if es_admin or lote.id_bodega == mi_bodega.id %}
+                                                                    <div class="location-card p-3 mb-2 rounded-3 border-start border-4 border-primary bg-light">
+                                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                            <span class="fw-bold text-dark" style="font-size: 0.8rem;">
+                                                                                <i class="bi bi-geo-alt-fill text-danger"></i> {{ lote.bodega_nombre }}
+                                                                            </span>
+                                                                            <span class="badge bg-primary rounded-pill px-3">Retirar: {{ lote.cantidad }} un.</span>
+                                                                        </div>
+                                                                        
+                                                                        <div class="row g-1 text-center mb-2">
+                                                                            <div class="col-3">
+                                                                                <div class="bg-white border rounded py-1 shadow-sm">
+                                                                                    <div class="text-muted fw-bold extra-small" style="font-size: 0.55rem;">ZONA</div>
+                                                                                    <div class="text-dark fw-bold small">{{ lote.zona_codigo }}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-3">
+                                                                                <div class="bg-white border rounded py-1 shadow-sm">
+                                                                                    <div class="text-muted fw-bold extra-small" style="font-size: 0.55rem;">RACK</div>
+                                                                                    <div class="text-dark fw-bold small">{{ lote.rack_codigo }}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-3">
+                                                                                <div class="bg-white border rounded py-1 shadow-sm">
+                                                                                    <div class="text-muted fw-bold extra-small" style="font-size: 0.55rem;">NIVEL</div>
+                                                                                    <div class="text-dark fw-bold small">{{ lote.nivel }}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-3">
+                                                                                <div class="bg-white border rounded py-1 shadow-sm">
+                                                                                    <div class="text-muted fw-bold extra-small" style="font-size: 0.55rem;">CELDA</div>
+                                                                                    <div class="text-success fw-bold small">{{ lote.celda }}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        
+                                                                        <div class="d-flex justify-content-between align-items-center extra-small">
+                                                                            <span class="text-muted"><i class="bi bi-upc-scan me-1"></i> ID Lote: <strong>{{ lote.lote_codigo }}</strong></span>
+                                                                            {% if lote.vencimiento %}
+                                                                                <span class="text-danger fw-bold"><i class="bi bi-calendar-event me-1"></i> Vence: {{ lote.vencimiento|date:"d/m/Y" }}</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </div>
+                                                                    {% endif %}
+                                                                {% empty %}
+                                                                    <div class="alert alert-warning py-2 extra-small mb-0 rounded-3">
+                                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Sin disponibilidad física en esta bodega.
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer border-0 pt-0 bg-light-subtle">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                                                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">
+                                                        <i class="bi bi-check-circle-fill me-2"></i>Confirmar Despacho FÍSICO
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="badge bg-light text-muted border">Sin Sede Asignada</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No existen órdenes de despacho pendientes.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root { --accent-blue: #0d6efd; }
+    .btn-chip { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; background: white; color: #212529; cursor: pointer; transition: all 0.2s; border: 1px solid #dee2e6; text-decoration: none; }
+    .btn-chip.primary { background-color: var(--accent-blue); color: white; border: none; }
+    .extra-small { font-size: 0.7rem; }
+    .table-elegant thead th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #6c757d; }
+    .location-card { transition: all 0.2s; border-radius: 12px; }
+    .location-card:hover { transform: translateX(5px); background-color: #f1f3f5!important; }
+    .stock-plan::-webkit-scrollbar { width: 5px; }
+    .stock-plan::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+    .stock-plan::-webkit-scrollbar-track { background: #f7fafc; }
+</style>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dash-wrap">
+    
+    <div class="report-header d-none d-print-block">
+        <div class="row align-items-center border-bottom pb-3 mb-4">
+            <div class="col-7">
+                <h2 class="fw-bold text-dark mb-0">KARDEX DE AUDITORÍA GENERAL</h2>
+                <p class="text-muted mb-0 small text-uppercase">Warehouse Management System - Trazabilidad de Inventario</p>
+            </div>
+            <div class="col-5 text-end small">
+                <div class="fw-bold">Fecha de Emisión:</div>
+                <div>{% now "d/m/Y H:i:s" %}</div>
+                <div class="fw-bold mt-2">Generado por:</div>
+                <div>{{ request.user.get_full_name|default:request.user.username }}</div>
+            </div>
+        </div>
+        
+        <div class="bg-light p-2 mb-4 border rounded small">
+            <div class="row">
+                <div class="col-4"><strong>Sede:</strong> {{ filtros.bodega_id|default:"Todas las Sedes" }}</div>
+                <div class="col-4 text-center"><strong>Periodo:</strong> {{ filtros.desde|default:"Inicio" }} al {{ filtros.hasta|default:"Fin" }}</div>
+                <div class="col-4 text-end"><strong>Total Movimientos:</strong> {{ movimientos|length }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-header mt-3 d-print-none">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small text-uppercase">
+                    <li class="breadcrumb-item text-muted">Consultas</li>
+                    <li class="breadcrumb-item active text-primary fw-bold" aria-current="page">Auditoría de Kardex</li>
+                </ol>
+            </nav>
+            <h3 class="dash-title fw-bold text-dark">Rastreo e Inteligencia de Stock</h3>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-soft-primary text-primary border border-primary-subtle px-3 py-2">
+                <i class="bi bi-layers me-1"></i>{{ movimientos|length }} Registros
+            </span>
+            <a href="?{{ request.GET.urlencode }}&export=1" class="btn btn-success btn-sm shadow-sm px-3">
+                <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel
+            </a>
+        </div>
+    </div>
+
+    <div class="row mt-4 d-print-none">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-white p-3 border-start border-primary border-4">
+                <div class="d-flex align-items-center">
+                    <div class="icon-circle bg-soft-primary text-primary me-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-currency-dollar fs-4"></i>
+                    </div>
+                    <div>
+                        <label class="text-muted small fw-bold text-uppercase mb-0">Valor Total en Movimiento</label>
+                        <h4 class="fw-bold mb-0 text-dark">${{ resumen_kpi.total_valor|default:"0.00"|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-white p-3 border-start border-success border-4">
+                <div class="d-flex align-items-center">
+                    <div class="icon-circle bg-soft-success text-success me-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-box-seam fs-4"></i>
+                    </div>
+                    <div>
+                        <label class="text-muted small fw-bold text-uppercase mb-0">Unidades Transaccionadas</label>
+                        <h4 class="fw-bold mb-0 text-dark">{{ resumen_kpi.total_unidades|default:"0" }} <small class="fs-6 text-muted fw-normal">unidades</small></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4 d-print-none mb-4 overflow-hidden rounded-3">
+        <div class="card-header bg-white py-3 border-bottom border-light">
+            <h6 class="mb-0 fw-bold text-muted small text-uppercase ls-1"><i class="bi bi-funnel-fill me-2 text-primary"></i>Filtros de Auditoría Forense</h6>
+        </div>
+        <div class="card-body bg-light-subtle p-4">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Búsqueda Rápida</label>
+                    <div class="input-group input-group-sm border rounded-2 bg-white shadow-xs">
+                        <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" value="{{ filtros.q }}" class="form-control border-0" placeholder="Producto o Lote...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary">Bodega</label>
+                    <select name="bodega" class="form-select form-select-sm border-light-subtle">
+                        <option value="">Todas</option>
+                        {% for b in bodegas %}
+                            <option value="{{ b.id }}" {% if filtros.bodega == b.id|stringformat:"s" %}selected{% endif %}>{{ b.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-secondary">Desde</label>
+                    <input type="date" name="desde" value="{{ filtros.desde }}" class="form-control form-control-sm border-light-subtle">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-secondary">Hasta</label>
+                    <input type="date" name="hasta" value="{{ filtros.hasta }}" class="form-control form-control-sm border-light-subtle">
+                </div>
+                <div class="col-md-1 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold rounded-2 px-3 shadow-xs">FILTRAR</button>
+                    <a href="{% url 'miapp:kardex_consulta' %}" class="btn btn-outline-secondary btn-sm border-light-subtle rounded-2"><i class="bi bi-arrow-counterclockwise"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm overflow-hidden rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-dark text-white shadow-sm">
+                    <tr class="small text-uppercase ls-1">
+                        <th class="ps-4 py-3 border-0">Registro</th>
+                        <th class="border-0">Operación Logística</th>
+                        <th class="border-0">Producto / Lote / Celda</th>
+                        <th class="text-center border-0">Variación</th>
+                        <th class="text-center border-0">Saldo Final</th>
+                        <th class="text-end border-0">Valorización</th>
+                        <th class="text-center border-0 d-print-none pe-3">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    {% for mov in movimientos %}
+                    <tr class="kardex-row {% if mov.tipo_movimiento.es_entrada %}kardex-in{% else %}kardex-out{% endif %}">
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark mb-0">{{ mov.fecha|date:"d M, Y" }}</div>
+                            <div class="text-muted extra-small"><i class="bi bi-clock me-1"></i>{{ mov.fecha|date:"H:i" }} | {{ mov.usuario.username }}</div>
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle bg-soft-secondary text-secondary me-2 shadow-xs">
+                                    <i class="bi {% if mov.tipo_movimiento.es_entrada %}bi-arrow-down-left-circle text-success{% else %}bi-arrow-up-right-circle text-danger{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark small">{{ mov.tipo_movimiento.codigo }}</div>
+                                    <div class="extra-small text-muted fst-italic">{{ mov.motivo|default:"Proceso Manual"|truncatechars:25 }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-bold text-dark small mb-1">{{ mov.stock_lote.producto.nombre|truncatechars:35 }}</div>
+                            <div class="d-flex gap-1">
+                                <span class="badge bg-light text-dark border-light-subtle extra-small fw-normal">L: {{ mov.stock_lote.lote }}</span>
+                                <span class="badge bg-white text-secondary border extra-small fw-normal shadow-xs">
+                                    <i class="bi bi-geo-alt me-1"></i>{{ mov.stock_lote.ubicacion.codigo_celda|default:"N/A" }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            {% if mov.tipo_movimiento.es_entrada %}
+                                <div class="fw-bolder fs-5 text-success">
+                                    +{{ mov.cantidad }}
+                                </div>
+                            {% else %}
+                                <div class="fw-bolder fs-5 text-danger">
+                                    -{{ mov.cantidad }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-center">
+                            <div class="fw-bold fs-6 text-dark">{{ mov.saldo_calculado }}</div>
+                            <div class="extra-small text-muted">Anterior: {{ mov.saldo_anterior }}</div>
+                        </td>
+
+                        <td class="text-end pe-3">
+                            <div class="fw-bold text-dark fs-6">${{ mov.valor_total|floatformat:2 }}</div>
+                            <div class="extra-small text-muted">C.U: ${{ mov.valor_unitario|floatformat:2 }}</div>
+                        </td>
+
+                        <td class="text-center d-print-none pe-3">
+                            <a href="{% url 'miapp:kardex_detalle' mov.pk %}" class="btn btn-outline-light btn-sm border-light-subtle rounded-circle text-primary hover-audit" title="Rastreo Forense">
+                                <i class="bi bi-search small"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center py-5 text-muted small">No se detectaron registros con los criterios de búsqueda actuales.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos base */
+    .ls-1 { letter-spacing: 0.5px; }
+    .extra-small { font-size: 0.68rem; }
+    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .kardex-row { transition: all 0.2s ease-in-out; border-bottom: 1px solid #f8f9fa; }
+    .kardex-row:hover { background-color: #fcfdfe !important; }
+    
+    /* Bordes indicadores de tipo */
+    .kardex-in { border-left: 5px solid #198754 !important; } /* Verde para entradas */
+    .kardex-out { border-left: 5px solid #dc3545 !important; } /* Rojo para salidas */
+    
+    .icon-circle { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .bg-soft-primary { background-color: #f0f7ff; }
+    .bg-soft-success { background-color: #f0fdf4; }
+    .bg-soft-secondary { background-color: #f8f9fa; }
+    
+    /* Colores forzados */
+    .text-success { color: #198754 !important; }
+    .text-danger { color: #dc3545 !important; }
+    
+    .hover-audit:hover { background-color: #f0f7ff !important; color: #0d6efd !important; border-color: #0d6efd !important; }
+
+    @media print {
+        @page { size: landscape; margin: 10mm; }
+        .d-print-none { display: none !important; }
+        .table { width: 100% !important; font-size: 8.5pt !important; border-collapse: collapse !important; }
+        .kardex-in, .kardex-out { border-left: 4px solid #000 !important; }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap pb-5">
+    <div class="dash-header mt-3 d-print-none border-bottom pb-3">
+        <div>
+            <div class="text-muted small mb-1">Auditoría <i class="bi bi-chevron-right mx-1"></i> Trazabilidad Profunda</div>
+            <h3 class="dash-title fw-bold text-dark">Análisis de Movimiento: {{ mov.codigo }}</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'miapp:kardex_consulta' %}" class="btn btn-light border btn-sm px-3">Regresar</a>
+        </div>
+    </div>
+
+    <div class="row mt-4 g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                    <h6 class="fw-bold m-0 text-muted text-uppercase small">Datos de Inventario</h6>
+                    <span class="badge border {% if mov.tipo_movimiento.es_entrada %}text-success border-success{% else %}text-danger border-danger{% endif %} bg-transparent px-3 py-2">
+                        {{ mov.tipo_movimiento.codigo }}
+                    </span>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <label class="small text-muted fw-bold">PRODUCTO</label>
+                        <p class="fw-bold mb-1 text-primary">{{ mov.stock_lote.producto.nombre }}</p>
+                        <div class="small text-muted mb-4">
+                            SKU: {{ mov.stock_lote.producto.codigo_sku }} | Marca: {{ mov.stock_lote.producto.marca.nombre }}
+                        </div>
+                        
+                        <label class="small text-muted fw-bold">IDENTIFICACIÓN LOTE</label>
+                        <p class="font-monospace text-dark fw-bold mb-0 border-bottom d-inline-block">{{ mov.stock_lote.lote }}</p>
+                        <p class="text-muted small mt-1">Fecha de Entrada: {{ mov.stock_lote.fecha_entrada|date:"d/m/Y" }}</p>
+                        
+                        {% if mov.stock_lote.proveedor %}
+                        <div class="mt-2">
+                            <label class="small text-muted fw-bold">PROVEEDOR ORIGEN</label>
+                            <div class="small text-dark">{{ mov.stock_lote.proveedor.nombre }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 ps-4">
+                        <label class="small text-muted fw-bold text-uppercase">Localización Física</label>
+                        <div class="d-flex align-items-center mt-2 p-3 bg-white border border-light rounded shadow-sm">
+                            <i class="bi bi-geo-alt fs-4 text-secondary me-3"></i>
+                            <div>
+                                <div class="fw-bold fs-5">{{ mov.stock_lote.ubicacion.codigo_celda }}</div>
+                                <div class="small text-muted">{{ mov.stock_lote.ubicacion.rack.zona.bodega.nombre }}</div>
+                            </div>
+                        </div>
+                        
+                        {% if mov.stock_lote.fecha_caducidad %}
+                        <div class="mt-4 p-2 border-top border-light">
+                            <label class="small text-muted fw-bold d-block mb-1">FECHA CADUCIDAD (FEFO)</label>
+                            <div class="small fw-bold {% if mov.stock_lote.es_vendible %}text-dark{% else %}text-danger{% endif %}">
+                                <i class="bi bi-calendar-event me-1"></i>Vence: {{ mov.stock_lote.fecha_caducidad|date:"d/m/Y" }}
+                                {% if not mov.stock_lote.es_vendible %}(Vencido/Bloqueado){% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-4 h-100 bg-white">
+                <h6 class="fw-bold mb-4 text-muted text-uppercase small border-bottom pb-2">Valoración Contable</h6>
+                
+                <div class="text-center py-4 bg-light-subtle rounded mb-4 border">
+                    <label class="small text-muted fw-bold d-block mb-1 opacity-75">IMPACTO TOTAL EN LIBROS</label>
+                    <div class="fs-2 fw-bold text-dark">${{ mov.valor_total|floatformat:2 }}</div>
+                    <small class="text-muted extra-small">Costo capturado al momento del registro</small>
+                </div>
+
+                <div class="small">
+                    <div class="d-flex justify-content-between py-2 border-bottom border-light">
+                        <span class="text-muted">Cantidad Transaccionada:</span>
+                        <span class="fw-bold">{{ mov.cantidad }} un.</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-light">
+                        <span class="text-muted">Costo Unitario Lote:</span>
+                        <span class="fw-bold">${{ mov.valor_unitario|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-3 mt-2 fw-bold bg-light-subtle px-2 rounded">
+                        <span class="text-dark">Stock Posterior:</span>
+                        <span class="text-dark fs-6">{{ mov.stock_despues }} un.</span>
+                    </div>
+                </div>
+
+                {% if rentabilidad %}
+                <div class="mt-4 p-3 border-start border-success border-4 bg-light rounded shadow-xs">
+                    <label class="d-block text-muted fw-bold extra-small text-uppercase">Margen de Salida (Utilidad Bruta)</label>
+                    <div class="d-flex justify-content-between align-items-end mt-1">
+                        <div class="fs-4 fw-bold text-success">+ ${{ rentabilidad.ganancia_total|floatformat:2 }}</div>
+                        <div class="badge bg-success-subtle text-success border border-success small">{{ rentabilidad.porcentaje|floatformat:1 }}%</div>
+                    </div>
+                    <div class="extra-small text-muted mt-1">Basado en Precio Venta: ${{ rentabilidad.precio_vta|floatformat:2 }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm p-4 border-top border-light">
+                <div class="row align-items-start g-4">
+                    <div class="col-md-4 border-end border-light">
+                        <label class="small text-muted fw-bold text-uppercase d-block mb-3">Responsable Operativo</label>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 45px; height: 45px;">
+                                <i class="bi bi-person-badge fs-4 text-secondary"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">{{ mov.usuario.get_full_name|default:mov.usuario.username }}</div>
+                                <div class="small text-muted">ID Sistema: #{{ mov.usuario.id }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 border-end border-light px-md-4">
+                        <label class="small text-muted fw-bold text-uppercase d-block mb-3">Vínculo Documental</label>
+                        {% if mov.pedido %}
+                            <div class="fw-bold text-dark"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Pedido: {{ mov.pedido.codigo }}</div>
+                            <div class="small text-muted mt-1">Cliente: {{ mov.pedido.cliente.nombres }} {{ mov.pedido.cliente.apellidos }}</div>
+                        {% elif mov.detalle_transferencia %}
+                            <div class="fw-bold text-dark"><i class="bi bi-truck me-2 text-info"></i>Traslado de Bodega</div>
+                            <div class="small text-muted mt-1">Ruta: {{ mov.bodega_origen.nombre }} ➔ {{ mov.bodega_destino.nombre }}</div>
+                        {% else %}
+                            <div class="fw-bold text-dark"><i class="bi bi-gear-wide-connected me-2 text-secondary"></i>Movimiento Interno</div>
+                            <div class="small text-muted mt-1">Referencia Auditoría: {{ mov.codigo }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 px-md-4">
+                        <label class="small text-muted fw-bold text-uppercase d-block mb-3">Observaciones Registradas</label>
+                        <div class="p-2 border-start border-3 border-light-subtle bg-light-subtle rounded-end">
+                            <p class="fst-italic text-secondary mb-0 small">"{{ mov.motivo|default:'No se registraron notas adicionales.' }}"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm p-4 border-top border-primary border-4">
+                <h6 class="fw-bold text-muted small text-uppercase mb-4">
+                    <i class="bi bi-diagram-3 me-2 text-primary"></i>Historial
+                </h6>
+                
+                <div class="timeline-container ps-3">
+                    {% for lote_hist in arbol %}
+                    <div class="timeline-item position-relative ps-4 pb-4 border-start border-2 border-light">
+                        <div class="position-absolute bg-white rounded-circle border border-2 {% if forloop.first %}border-primary{% else %}border-secondary{% endif %}" 
+                             style="width: 14px; height: 14px; left: -8px; top: 5px;"></div>
+                        
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <div class="fw-bold text-dark {% if forloop.first %}text-primary{% endif %}">{{ lote_hist.lote }}</div>
+                                <div class="extra-small text-muted">{{ lote_hist.fecha_entrada|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div class="col-md-5">
+                                <span class="small text-dark fw-semibold">Bodega:</span> 
+                                <span class="small text-muted">{{ lote_hist.ubicacion.rack.zona.bodega.nombre }}</span>
+                                <br>
+                                <span class="extra-small text-muted">Celda: {{ lote_hist.ubicacion.codigo_celda }}</span>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                {% if forloop.last %}
+                                    <span class="badge bg-success-subtle text-success border border-success extra-small">ORIGEN: {{ lote_hist.proveedor.nombre|default:"Ingreso Inicial" }}</span>
+                                {% elif forloop.first %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary extra-small">UBICACIÓN ACTUAL</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border extra-small">TRASPADO INTERNO</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ls-1 { letter-spacing: 0.5px; }
+    .extra-small { font-size: 0.75rem; }
+    .shadow-xs { box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+    .bg-success-subtle { background-color: #e6fcf5 !important; }
+    .bg-primary-subtle { background-color: #e7f5ff !important; }
+    
+    /* Línea del timeline */
+    .timeline-item:last-child { border-left: none !important; }
+    
+    @media print {
+        @page { size: auto; margin: 15mm; }
+        body { background: white !important; font-size: 10pt; }
+        .dash-wrap { padding: 0 !important; }
+        .card { border: 1px solid #eee !important; box-shadow: none !important; margin-bottom: 20px; }
+        .border-top { border-top: 3px solid #000 !important; }
+        .badge { border: 1px solid #ccc !important; color: black !important; }
+    }
+</style>
+{% endblock %}

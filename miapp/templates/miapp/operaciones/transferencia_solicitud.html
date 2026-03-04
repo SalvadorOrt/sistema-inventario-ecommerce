@@ -1,0 +1,130 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+
+<div class="dash-wrap">
+    <div class="dash-header mt-4 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="dash-subtitle text-muted text-uppercase ls-1" style="font-size: 0.75rem;">Centro de Logística</h5>
+            <h3 class="dash-title fw-bold text-dark">Gestión Inteligente de Abastecimiento</h3>
+            <p class="text-muted small mb-0">Gestione los faltantes de cada pedido de forma individual. El sistema sugiere la mejor bodega de origen.</p>
+        </div>
+        <a href="{% url 'miapp:inicio' %}" class="btn btn-light border rounded-pill">
+            <i class="bi bi-arrow-left me-2"></i>Volver al Panel
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light small text-uppercase text-secondary">
+                    <tr>
+                        <th class="ps-4" style="width: 30%;">Producto / Pedido</th>
+                        <th class="text-center" style="width: 10%;">Faltante</th>
+                        <th style="width: 25%;">Origen Sugerido (Envía)</th>
+                        <th style="width: 5%;" class="text-center"><i class="bi bi-arrow-right"></i></th>
+                        <th style="width: 20%;">Destino (Solicita)</th>
+                        <th class="pe-4 text-end" style="width: 10%;">Acción</th>
+                    </tr>
+                </thead>
+                
+                {% regroup sugerencias_deficit by pedido.bodega_origen as pedidos_por_sucursal %}
+                
+                <tbody>
+                    {% for sucursal in pedidos_por_sucursal %}
+                        <tr class="table-secondary border-top border-dark-subtle">
+                            <td colspan="6" class="ps-4 py-2 text-dark fw-bold">
+                                <i class="bi bi-geo-alt-fill me-2 text-primary"></i>
+                                NECESIDADES DE: {{ sucursal.grouper.nombre|default:"ADMINISTRACIÓN CENTRAL" }}
+                            </td>
+                        </tr>
+
+                        {% for item in sucursal.list %}
+                        <tr class="bg-white border-bottom">
+                            <form method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="producto_id" value="{{ item.producto.id }}">
+                                <input type="hidden" name="pedido_id" value="{{ item.pedido.id }}">
+                                <input type="hidden" name="cantidad" value="{{ item.cantidad_solicitada }}">
+                                <input type="hidden" name="destino_id" value="{{ item.bodega_destino_calculada.id }}">
+
+                                <td class="ps-4">
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold text-dark">{{ item.producto.nombre }}</span>
+                                        <span class="extra-small text-muted">SKU: {{ item.producto.codigo_sku }}</span>
+                                        <span class="badge bg-light text-dark border mt-1 w-auto align-self-start">
+                                            {{ item.pedido.codigo }} | {{ item.pedido.cliente.nombres }}
+                                        </span>
+                                    </div>
+                                </td>
+                                
+                                <td class="text-center fw-bold text-danger">
+                                    {{ item.cantidad_solicitada }}
+                                </td>
+
+                                <td>
+                                    {% if item.fuentes_sugeridas %}
+                                        <select name="origen_id" class="form-select form-select-sm border-success text-success fw-bold shadow-sm">
+                                            {% for inv in item.fuentes_sugeridas %}
+                                                <option value="{{ inv.bodega.id }}">
+                                                    {{ inv.bodega.nombre }} (Disp: {{ inv.stock_actual }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <div class="badge bg-danger-subtle text-danger p-2 w-100 text-start">
+                                            <i class="bi bi-x-circle me-1"></i> Agotado en red
+                                        </div>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center text-muted">
+                                    <i class="bi bi-arrow-right-circle-fill"></i>
+                                </td>
+
+                                <td>
+                                    <span class="text-muted small fw-bold">
+                                        {{ item.bodega_destino_calculada.nombre }}
+                                    </span>
+                                </td>
+
+                                <td class="pe-4 text-end">
+                                    {% if item.fuentes_sugeridas %}
+                                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-send-plus me-1"></i> Solicitar
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" disabled>
+                                            Sin Stock
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </form>
+                        </tr>
+                        {% endfor %}
+                        
+                        <tr><td colspan="6" class="p-0 border-0" style="height: 10px;"></td></tr>
+
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-check-circle-fill display-4 d-block mb-3 opacity-25"></i>
+                                No hay requerimientos de stock pendientes en este momento.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

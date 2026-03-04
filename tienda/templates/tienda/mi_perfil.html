@@ -1,0 +1,276 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Estilos Generales Panel */
+    .profile-card {
+        background: #fff; border: 1px solid #eaeaea; border-radius: 12px;
+        padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        height: 100%; /* Para que las columnas tengan altura similar */
+    }
+    .card-header-flex { 
+        display: flex; justify-content: space-between; align-items: center; 
+        margin-bottom: 25px; border-bottom: 2px solid #f5f5f5; padding-bottom: 10px;
+    }
+    .card-title { font-weight: 800; font-size: 1.1rem; margin: 0; }
+
+    /* Inputs */
+    .form-label { font-size: 0.8rem; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 5px; }
+    .form-control { border: 1px solid #ddd; padding: 10px; font-size: 0.9rem; border-radius: 6px; }
+    .form-control:focus { border-color: #000; box-shadow: none; }
+
+    /* Botones */
+    .btn-dark-erp {
+        background: #111; color: #fff; border: none; padding: 10px 20px;
+        font-weight: 700; border-radius: 6px; width: 100%; transition: 0.2s;
+    }
+    .btn-dark-erp:hover { background: #333; color: #fff; }
+    
+    .btn-action-sm {
+        font-size: 0.75rem; font-weight: 700; color: #000; text-decoration: underline; 
+        background: none; border: none; cursor: pointer;
+    }
+
+    /* --- TARJETAS DE CRÉDITO (VISUAL) --- */
+    .credit-card-item {
+        background: linear-gradient(135deg, #333 0%, #000 100%);
+        color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 15px;
+        position: relative; overflow: hidden;
+    }
+    .credit-card-item.visa { background: linear-gradient(135deg, #1a1f71 0%, #2931a5 100%); }
+    .credit-card-item.mastercard { background: linear-gradient(135deg, #eb001b 0%, #f79e1b 100%); }
+    
+    .cc-logo { font-size: 1.2rem; font-style: italic; font-weight: 800; margin-bottom: 20px; opacity: 0.9; }
+    .cc-number { font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; margin-bottom: 15px; }
+    .cc-info { display: flex; justify-content: space-between; font-size: 0.8rem; opacity: 0.8; }
+    
+    .btn-del-cc {
+        position: absolute; top: 15px; right: 15px; color: #fff; opacity: 0.5; cursor: pointer;
+    }
+    .btn-del-cc:hover { opacity: 1; color: #ef4444; }
+
+    /* --- DIRECCIONES --- */
+    .address-card {
+        border: 1px dashed #ccc; padding: 15px; border-radius: 8px; margin-bottom: 15px;
+        position: relative; transition: 0.2s; background: #fafafa;
+    }
+    .address-card:hover { border-color: #000; background: #fff; }
+    .badge-main { background: #000; color: #fff; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; }
+</style>
+
+<div class="container py-5">
+    <div class="row g-4">
+        
+        <div class="col-lg-5">
+            <div class="profile-card">
+                <div class="card-header-flex">
+                    <h3 class="card-title">Datos Personales</h3>
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_profile" value="1">
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" name="apellido" class="form-control" value="{{ user.last_name }}" required>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">Correo Electrónico</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}" readonly style="background:#f9f9f9; color:#777;">
+                            <small class="text-muted" style="font-size: 0.7rem;">El correo no se puede modificar.</small>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label">Cédula / RUC</label>
+                            <input type="text" name="cedula" class="form-control" value="{{ cliente.numero_identificacion|default:'' }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control" value="{{ cliente.telefono|default:'' }}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-dark-erp mt-4">ACTUALIZAR DATOS</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            
+            <div class="profile-card" style="height: auto;">
+                <div class="card-header-flex">
+                    <h3 class="card-title">Métodos de Pago</h3>
+                    <button class="btn-action-sm" data-bs-toggle="modal" data-bs-target="#modalPayment">+ AGREGAR TARJETA</button>
+                </div>
+
+                {% if tarjetas %}
+                    <div class="row">
+                        {% for tarjeta in tarjetas %}
+                        <div class="col-md-6">
+                            <div class="credit-card-item {{ tarjeta.tipo|lower }}">
+                                <div class="cc-logo">{{ tarjeta.get_tipo_display }}</div>
+                                <div class="cc-number">•••• •••• •••• {{ tarjeta.ultimos_digitos }}</div>
+                                <div class="cc-info">
+                                    <span>{{ tarjeta.nombre_titular|upper }}</span>
+                                    <span>EXP: {{ tarjeta.fecha_vencimiento }}</span>
+                                </div>
+                                <a href="{% url 'tienda:eliminar_pago' tarjeta.id %}" class="btn-del-cc" onclick="return confirm('¿Eliminar esta tarjeta?')">
+                                    <span class="material-icons-round">delete</span>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <span class="material-icons-round text-muted" style="font-size: 3rem;">credit_card_off</span>
+                        <p class="text-muted small mt-2">No tienes tarjetas guardadas.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="profile-card" style="height: auto;">
+                <div class="card-header-flex">
+                    <h3 class="card-title">Mis Direcciones</h3>
+                    <button class="btn-action-sm" data-bs-toggle="modal" data-bs-target="#modalAddress">+ NUEVA DIRECCIÓN</button>
+                </div>
+
+                {% if direcciones %}
+                    <div class="row">
+                        {% for dir in direcciones %}
+                        <div class="col-md-6">
+                            <div class="address-card">
+                                {% if dir.es_principal %}
+                                    <span class="badge-main mb-2 d-inline-block">PRINCIPAL</span>
+                                {% endif %}
+                                <h6 class="fw-bold mb-1">{{ dir.nombre_destinatario }}</h6>
+                                <p class="mb-1 text-muted small">{{ dir.calle_principal }} y {{ dir.calle_secundaria }}</p>
+                                <p class="mb-1 text-muted small">{{ dir.ciudad }}</p>
+                                <p class="mb-0 small"><strong>Tel:</strong> {{ dir.telefono }}</p>
+
+                                <a href="{% url 'tienda:eliminar_direccion' dir.id %}" class="btn-del-cc" style="color:#ccc; top:10px; right:10px;" onclick="return confirm('¿Borrar esta dirección?')">
+                                    <span class="material-icons-round" style="color:#ccc;">close</span>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <span class="material-icons-round text-muted" style="font-size: 3rem;">location_off</span>
+                        <p class="text-muted small mt-2">No tienes direcciones registradas.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPayment" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="POST" action="{% url 'tienda:agregar_pago' %}">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Nueva Tarjeta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Titular de la Tarjeta</label>
+                    <input type="text" name="titular" class="form-control" placeholder="Como aparece en la tarjeta" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Número de Tarjeta</label>
+                    <input type="text" name="numero_tarjeta" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Vencimiento (MM/YY)</label>
+                        <input type="text" name="vencimiento" class="form-control" placeholder="01/28" maxlength="5" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo_tarjeta" class="form-select">
+                            <option value="VISA">Visa</option>
+                            <option value="MASTERCARD">Mastercard</option>
+                            <option value="DINERS">Diners Club</option>
+                            <option value="AMEX">American Express</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted d-flex align-items-center gap-1">
+                        <span class="material-icons-round fs-6">lock</span> Tus datos están protegidos y tokenizados.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-dark fw-bold">Guardar Tarjeta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAddress" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="POST" action="{% url 'tienda:agregar_direccion' %}">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Nueva Dirección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Destinatario</label>
+                    <input type="text" name="destinatario" class="form-control"  required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Ciudad</label>
+                        <input type="text" name="ciudad" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Teléfono Contacto</label>
+                        <input type="text" name="telefono" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Calle Principal</label>
+                    <input type="text" name="calle_principal" class="form-control" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Calle Secundaria</label>
+                    <input type="text" name="calle_secundaria" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Referencia</label>
+                    <textarea name="referencia" class="form-control" rows="2" placeholder="Ej: Frente al parque..."></textarea>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="es_principal" id="chkMain">
+                    <label class="form-check-label" for="chkMain">Marcar como dirección principal</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-dark fw-bold">Guardar Dirección</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

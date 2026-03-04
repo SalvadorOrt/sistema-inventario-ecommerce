@@ -1,0 +1,242 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<div class="dash-wrap">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <h4 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reporte de Mermas y Pérdidas</h4>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} shadow-sm border-0">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="formAjuste" onsubmit="return validarEnvio()">
+        {% csrf_token %}
+        
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-light py-3">
+                <h6 class="fw-bold mb-0 text-dark">1. Datos Generales del Incidente</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">BODEGA</label>
+                        {% if es_admin %}
+                            <select name="bodega" id="selBodega" class="form-select select2-simple" required>
+                                <option value="">Seleccione Bodega...</option>
+                                {% for b in bodegas %}
+                                    <option value="{{ b.id }}">{{ b.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="text" class="form-control bg-light fw-bold" value="{{ mi_bodega.nombre }}" readonly>
+                            <input type="hidden" name="bodega" id="selBodega" value="{{ mi_bodega.id }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">MOTIVO DE BAJA</label>
+                        <select name="motivo" class="form-select" required>
+                            <option value="">-- Seleccione Causa --</option>
+                            {% for cod, nombre in motivos %}
+                                <option value="{{ cod }}">{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">BUSCAR PRODUCTO AFECTADO</label>
+                        <select id="selProducto" class="form-select" disabled>
+                            <option value="">Primero seleccione bodega...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label fw-bold small text-muted">OBSERVACIÓN ADICIONAL (OPCIONAL)</label>
+                        <input type="text" name="observacion" class="form-control form-control-sm" placeholder="Detalles extra (ej: Acta policial #123, Derrame en pasillo 4...)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 d-none" id="cardLotes">
+            <div class="card-header bg-danger bg-opacity-10 py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-danger">2. Seleccione Lotes y Cantidades</h6>
+                <span class="badge bg-danger">Modo Edición</span>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 table-hover">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Info Lote</th>
+                            <th>Ubicación</th>
+                            <th>Vencimiento</th>
+                            <th class="text-center">Stock Actual</th>
+                            <th class="text-center" width="20%">Cantidad a Restar</th>
+                            <th class="pe-4 text-end">Baja Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyLotes">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer bg-white p-3 text-end">
+                <button type="submit" class="btn btn-danger px-5 fw-bold rounded-pill">
+                    Confirmar Pérdida
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.select2-simple').select2({ theme: 'bootstrap-5' });
+        
+        $('#selProducto').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Escriba para buscar producto...',
+            allowClear: true
+        });
+
+        // 1. Cambio de Bodega
+        $('#selBodega').on('change', function() {
+            cargarProductos($(this).val());
+            $('#cardLotes').addClass('d-none');
+        });
+        
+        if ($('#selBodega').val()) {
+            cargarProductos($('#selBodega').val());
+        }
+
+        // 2. Cambio de Producto
+        $('#selProducto').on('change', function() {
+            var prodId = $(this).val();
+            var bodegaId = $('#selBodega').val();
+            if(prodId && bodegaId) {
+                renderizarTablaLotes(bodegaId, prodId);
+            } else {
+                $('#cardLotes').addClass('d-none');
+            }
+        });
+    });
+
+    function cargarProductos(bodegaId) {
+        var $sel = $('#selProducto');
+        $sel.empty().prop('disabled', true);
+        if(!bodegaId) return;
+
+        $.ajax({
+            url: "{% url 'miapp:api_productos_bodega' %}", 
+            data: { 'bodega_id': bodegaId },
+            success: function(data) {
+                $sel.append(new Option("Seleccione Producto...", ""));
+                data.productos.forEach(function(p) {
+                    $sel.append(new Option(p.text, p.id));
+                });
+                $sel.prop('disabled', false);
+            }
+        });
+    }
+
+    // === LÓGICA DE TABLA ===
+    function renderizarTablaLotes(bodegaId, prodId) {
+        var $tbody = $('#tbodyLotes');
+        $tbody.empty();
+        $('#cardLotes').removeClass('d-none');
+
+        $.ajax({
+            url: "{% url 'miapp:api_lotes_producto' %}", 
+            data: { 'bodega_id': bodegaId, 'producto_id': prodId },
+            success: function(data) {
+                if(data.lotes.length === 0) {
+                    $tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted">No hay stock disponible de este producto.</td></tr>');
+                    return;
+                }
+
+                data.lotes.forEach(function(l) {
+                    // Si el lote tiene fecha, la mostramos, sino "N/A"
+                    var vencimientoHtml = l.vencimiento !== 'N/A' 
+                        ? `<span class="text-danger fw-bold">${l.vencimiento}</span>` 
+                        : '<span class="text-muted">-</span>';
+
+                    var fila = `
+                        <tr class="align-middle">
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">${l.lote}</div>
+                                <input type="hidden" name="lote_id[]" value="${l.id}">
+                            </td>
+                            <td><span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>${l.ubicacion}</span></td>
+                            <td>${vencimientoHtml}</td>
+                            <td class="text-center fw-bold fs-5">${l.stock}</td>
+                            <td>
+                                <input type="number" name="cantidad[]" class="form-control text-center fw-bold input-cantidad" 
+                                       min="0" max="${l.stock}" value="0"
+                                       data-max="${l.stock}">
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="form-check form-switch d-inline-block">
+                                    <input class="form-check-input switch-total" type="checkbox" title="Marcar como pérdida total">
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    $tbody.append(fila);
+                });
+            }
+        });
+    }
+
+    // Evento para el Switch "Baja Total"
+    $(document).on('change', '.switch-total', function() {
+        var row = $(this).closest('tr');
+        var input = row.find('.input-cantidad');
+        var max = input.data('max');
+
+        if ($(this).is(':checked')) {
+            // Modo Automático: Ponemos todo el stock y bloqueamos visualmente (readonly)
+            input.val(max).prop('readonly', true).addClass('bg-light text-danger');
+        } else {
+            // Modo Manual: Limpiamos y desbloqueamos
+            input.val(0).prop('readonly', false).removeClass('bg-light text-danger').focus();
+        }
+    });
+
+    // Validación manual de entrada
+    $(document).on('input', '.input-cantidad', function() {
+        var max = $(this).data('max');
+        var val = parseInt($(this).val()) || 0;
+        
+        if (val > max) {
+            alert("No puedes dar de baja más stock del disponible (" + max + ").");
+            $(this).val(max);
+        }
+        if (val < 0) $(this).val(0);
+    });
+
+    // Validación final antes de enviar
+    window.validarEnvio = function() {
+        var totalRestar = 0;
+        $('.input-cantidad').each(function() {
+            totalRestar += parseInt($(this).val()) || 0;
+        });
+
+        if (totalRestar === 0) {
+            alert("Debe ingresar al menos una cantidad mayor a 0 para realizar el ajuste.");
+            return false;
+        }
+        return confirm("¿Está seguro de registrar estas pérdidas? Esta acción es irreversible.");
+    }
+</script>
+{% endblock %}

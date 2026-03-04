@@ -1,0 +1,187 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <h5 class="dash-subtitle">Infraestructura Logística</h5>
+            <h3 class="dash-title">{{ titulo }}</h3>
+        </div>
+        <a href="{% url 'miapp:bodega_crear' %}" class="btn-chip">
+            <i class="bi bi-plus-lg me-1"></i> Nueva Sede
+        </a>
+    </div>
+
+    <div class="card-soft mb-4">
+        <form method="get" id="formFiltros">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <label class="dash-subtitle mb-1">Búsqueda Inteligente</label>
+                    <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Nombre de sede, dirección, ciudad...">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="dash-subtitle mb-1">Estado Operativo</label>
+                    <select name="estado" class="form-select form-select-sm select2-enable" data-label="Estado">
+                        <option value="">Todos</option>
+                        <option value="activo" {% if estado_actual == 'activo' %}selected{% endif %}>Solo Activas</option>
+                        <option value="inactivo" {% if estado_actual == 'inactivo' %}selected{% endif %}>Solo Inactivas</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="dash-subtitle mb-1">Ordenar por</label>
+                    <select name="orden" class="form-select form-select-sm select2-enable" data-label="Orden">
+                        <option value="nombre" {% if orden_actual == 'nombre' %}selected{% endif %}>A - Z</option>
+                        <option value="-num_zonas" {% if orden_actual == '-num_zonas' %}selected{% endif %}>Más Capacidad</option>
+                        <option value="id" {% if orden_actual == 'id' %}selected{% endif %}>Más Recientes</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex justify-content-end align-items-end">
+                    <button type="submit" class="btn-chip justify-content-center w-100" style="background-color: var(--accent-blue); color: white; border: none; cursor: pointer;">
+                        <i class="bi bi-funnel me-2"></i>Aplicar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="active-filters-container" class="dash-actions mb-3" style="display: none; gap: 8px;">
+        <span class="label">Filtros aplicados</span>
+        <a href="{% url 'miapp:bodegas_gestion' %}" class="btn-chip" style="color: #842029; border-color: #f5c6cb; background-color: #fff;">
+            <i class="bi bi-x-lg me-1"></i> Limpiar
+        </a>
+    </div>
+
+    <div class="table-card">
+        <div class="card-header-compact d-flex justify-content-between align-items-center">
+            <div>
+                <div class="h-title">Sedes Registradas</div>
+                <div class="h-sub">Gestionando {{ total_resultados }} centros de distribución</div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th class="ps-4">SEDE / BODEGA</th>
+                        <th>UBICACIÓN FÍSICA</th>
+                        <th class="text-center">CAPACIDAD</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-end pe-4">GESTIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bodega in items %}
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div style="width: 40px; height: 40px; border-radius: 8px; background:var(--bg-main); border: 1px solid var(--border-soft); display:flex; align-items:center; justify-content:center; color:var(--accent-blue);">
+                                        <i class="bi bi-building fs-5"></i>
+                                    </div>
+                                    <div class="td-truncate">
+                                        <div class="fw-bold text-main">{{ bodega.nombre }}</div>
+                                        <div class="text-muted small">ID: SEDE-{{ bodega.id|stringformat:"02d" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="text-main small text-truncate" style="max-width: 250px;">{{ bodega.direccion|default:"Sin dirección" }}</span>
+                                    <span class="text-muted small italic">{{ bodega.referencia|default:"--"|truncatechars:40 }}</span>
+                                </div>
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge-soft" style="background:#e7f3ff; color:#0056b3; font-weight: 600;">
+                                    {{ bodega.num_zonas }} Zonas
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                {% if bodega.es_activo %}
+                                    <span class="badge-soft" style="background:#e9f7ef; color:#0f5132;">Activa</span>
+                                {% else %}
+                                    <span class="badge-soft" style="background:#ffecec; color:#842029;">Inactiva</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'miapp:bodega_detalle' bodega.pk %}" class="btn-chip" style="padding: .3rem .6rem; border-color: var(--accent-blue); color: var(--accent-blue);" title="Ver Infraestructura">
+                                        <i class="bi bi-diagram-3-fill"></i>
+                                    </a>
+                                    <a href="{% url 'miapp:bodega_editar' bodega.pk %}" class="btn-chip" style="padding: .3rem .6rem;" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="muted">
+                                    <i class="bi bi-building-exclamation fs-1 d-block mb-2"></i>
+                                    No se encontraron sedes configuradas.
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2
+        $('.select2-enable').select2({
+            width: '100%',
+            minimumResultsForSearch: Infinity
+        });
+
+        // Lógica de Chips de Filtros (Copiada de tu diseño de catálogo)
+        const container = $('#active-filters-container');
+        let hasActiveFilters = false;
+
+        const checkFilter = (val, label, text) => {
+            if (val && val !== "") {
+                const html = `
+                    <span class="btn-chip" style="cursor: default;">
+                        <span class="muted me-1" style="font-size: 0.75rem; text-transform: uppercase;">${label}:</span> 
+                        <span>${text || val}</span>
+                    </span>`;
+                $(html).insertBefore(container.find('a'));
+                hasActiveFilters = true;
+            }
+        };
+
+        checkFilter($('input[name="q"]').val(), 'Búsqueda');
+        
+        $('select').each(function() {
+            const val = $(this).val();
+            if (val && val !== "") {
+                const label = $(this).data('label');
+                const text = $(this).find('option:selected').text().trim();
+                checkFilter(val, label, text);
+            }
+        });
+
+        if (hasActiveFilters) container.css('display', 'flex');
+    });
+</script>
+
+{% endblock %}

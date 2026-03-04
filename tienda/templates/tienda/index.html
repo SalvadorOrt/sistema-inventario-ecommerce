@@ -1,0 +1,263 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso - Sistema de Inventario</title>
+
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='0.8' vector-effect='non-scaling-stroke' stroke-linecap='butt' stroke-linejoin='miter' shape-rendering='geometricPrecision'><rect x='2' y='2' width='5' height='5'/><rect x='9' y='2' width='5' height='5'/><rect x='16' y='2' width='5' height='5'/><rect x='2' y='9' width='5' height='5'/><rect x='9' y='9' width='5' height='5'/><rect x='16' y='9' width='5' height='5'/><rect x='2' y='16' width='5' height='5'/><rect x='9' y='16' width='5' height='5'/><rect x='16' y='16' width='5' height='5'/></g></svg>"
+  >
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent-blue: #2bb0f0;
+      --accent-hover: #008ecf;
+      --text-main: #111;
+      --text-muted: #6e6e73;
+      --border-soft: #d2d2d7;
+      --bg-color: #f5f5f7;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg-color);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* --- ESTILOS DEL CUBO RUBIK --- */
+    .cube-icon {
+        transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        transform-origin: center;
+        display: block;
+    }
+
+    .cube-square {
+        transition: fill 0.3s ease, opacity 0.3s ease, stroke 0.3s ease;
+        fill: #333;
+        stroke: none;
+        stroke-width: 0;
+    }
+
+    #rubikBtn { cursor: pointer; outline: none; }
+    #rubikBtn:hover .cube-icon {
+        transform: rotate(180deg) scale(1.1);
+    }
+    #rubikBtn:hover .cube-square {
+        opacity: 1 !important;
+    }
+
+    /* Efecto Ola (Delay) */
+    .cube-square:nth-child(1) { transition-delay: 0.05s; }
+    .cube-square:nth-child(2) { transition-delay: 0.10s; }
+    .cube-square:nth-child(3) { transition-delay: 0.15s; }
+    .cube-square:nth-child(4) { transition-delay: 0.20s; }
+    .cube-square:nth-child(5) { transition-delay: 0.25s; }
+    .cube-square:nth-child(6) { transition-delay: 0.30s; }
+    .cube-square:nth-child(7) { transition-delay: 0.35s; }
+    .cube-square:nth-child(8) { transition-delay: 0.40s; }
+    .cube-square:nth-child(9) { transition-delay: 0.45s; }
+
+
+    /* --- CONTENEDOR CENTRAL --- */
+    .login-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* TARJETA */
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      border-radius: 24px;
+      padding: 42px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      color: var(--text-main);
+      letter-spacing: 0.5px;
+    }
+
+    /* INPUTS */
+    .form-control {
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      border: 1px solid var(--border-soft);
+      margin-bottom: 16px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .form-control:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 4px rgba(43, 176, 240, 0.15);
+    }
+
+    /* BOTÓN LOGIN */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background-color: var(--text-main);
+      color: #fff;
+      border: 1px solid var(--text-main);
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+    .btn-login:hover {
+      background-color: var(--accent-blue);
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+
+    /* SEPARADOR */
+    .separator {
+      margin: 24px 0;
+      border-bottom: 1px solid #eeeeee;
+      width: 100%;
+      position: relative;
+    }
+    .separator::after {
+      content: 'o';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 0 10px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* BOTÓN REGISTRO */
+    .btn-register {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background-color: #fff;
+      color: var(--text-main);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-register:hover {
+      background-color: #f9f9f9;
+      border-color: var(--text-main);
+      color: var(--text-main);
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="login-wrapper">
+
+    <div class="login-card">
+        
+        <div class="d-flex justify-content-center mb-4">
+            <button id="rubikBtn" class="border-0 bg-transparent p-0" type="button">
+                <svg class="cube-icon" width="40" height="40" viewBox="0 0 24 24">
+                    <rect class="cube-square" x="3" y="3" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="9.5" y="3" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="16" y="3" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="3" y="9.5" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="9.5" y="9.5" width="5" height="5" rx="1" opacity="1"/>
+                    <rect class="cube-square" x="16" y="9.5" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="3" y="16" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="9.5" y="16" width="5" height="5" rx="1" opacity="0.8"/>
+                    <rect class="cube-square" x="16" y="16" width="5" height="5" rx="1" opacity="0.8"/>
+                </svg>
+            </button>
+        </div>
+
+        <h1>Acceso</h1>
+
+        <form method="POST" action="{% url 'tienda:login' %}">
+            {% csrf_token %}
+
+            <input
+                type="text"
+                name="username"
+                class="form-control"
+                placeholder="Correo electrónico o usuario"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                class="form-control"
+                placeholder="Contraseña"
+                required
+            >
+
+            <button type="submit" class="btn-login">
+                Iniciar sesión
+            </button>
+        </form>
+
+        <div class="separator"></div>
+
+        <a href="{% url 'tienda:registro' %}" class="btn-register">
+            Crear cuenta nueva
+        </a>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const btn = document.getElementById('rubikBtn');
+        const squares = document.querySelectorAll('.cube-square');
+        const rubikColors = ['#FFFFFF', '#FFD500', '#009CDA', '#009B48', '#B90000', '#FF5800'];
+
+        function randomizeCube() {
+            squares.forEach(square => {
+                const randomColor = rubikColors[Math.floor(Math.random() * rubikColors.length)];
+                square.style.fill = randomColor;
+                if (randomColor === '#FFFFFF') {
+                    square.style.stroke = '#ccc'; square.style.strokeWidth = '1px';
+                } else {
+                    square.style.stroke = 'none';
+                }
+            });
+        }
+        
+        if(btn){
+            btn.addEventListener('mouseenter', randomizeCube);
+            btn.addEventListener('click', randomizeCube);
+            btn.addEventListener('mouseleave', function() {
+                squares.forEach(square => {
+                    square.style.fill = '#333'; square.style.stroke = 'none';
+                });
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

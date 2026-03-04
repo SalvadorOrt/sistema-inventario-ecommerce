@@ -1,0 +1,342 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* --- GALERÍA --- */
+    .product-gallery { position: sticky; top: 120px; }
+    .main-image-box {
+        border: 1px solid #eee; border-radius: 8px; overflow: hidden;
+        aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
+        background: #fff; margin-bottom: 15px; position: relative;
+    }
+    .main-image-box img { width: 90%; height: 90%; object-fit: contain; transition: transform 0.3s; }
+    .main-image-box:hover img { transform: scale(1.05); }
+    
+    .thumbnails { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+    .thumb { 
+        width: 70px; height: 70px; border: 1px solid #ddd; border-radius: 4px; 
+        cursor: pointer; object-fit: contain; padding: 5px; opacity: 0.6; transition: 0.2s;
+    }
+    .thumb:hover, .thumb.active { opacity: 1; border-color: #000; }
+
+    /* --- INFO PRODUCTO --- */
+    .product-sku { font-size: 0.85rem; color: #888; font-family: monospace; letter-spacing: 1px; }
+    .product-title { font-size: 2rem; font-weight: 800; line-height: 1.1; margin: 10px 0; }
+    .product-price { font-size: 1.8rem; font-weight: 700; color: #000; margin-bottom: 15px; }
+    
+    .stock-badge {
+        display: inline-block; padding: 5px 12px; border-radius: 20px; 
+        font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+    }
+    .stock-ok { background: #dcfce7; color: #166534; }
+    .stock-low { background: #ffedd5; color: #9a3412; }
+    .stock-out { background: #fee2e2; color: #991b1b; }
+
+    /* --- CONTROLES DE COMPRA --- */
+    .buy-controls { display: flex; gap: 15px; align-items: stretch; margin-top: 20px; }
+    
+    .qty-input-group {
+        display: flex; border: 1px solid #000; border-radius: 6px; overflow: hidden; width: 120px;
+    }
+    .qty-btn {
+        background: #fff; border: none; width: 35px; font-weight: bold; cursor: pointer; transition: 0.2s;
+    }
+    .qty-btn:hover { background: #f0f0f0; }
+    
+    .qty-value {
+        flex: 1; width: 40px; border: none; outline: none; background: transparent;
+        text-align: center; font-weight: 600; height: 32px; line-height: 32px; padding: 0;
+        appearance: textfield; -moz-appearance: textfield;
+    }
+    .qty-value::-webkit-outer-spin-button,
+    .qty-value::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .btn-add-cart {
+        flex: 1; background: #000; color: #fff; border: none; border-radius: 6px;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        transition: 0.3s;
+    }
+    .btn-add-cart:hover { background: #333; }
+    .btn-add-cart:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* --- BOTÓN FAVORITOS (ESTRELLA DORADA) --- */
+    .btn-fav {
+        width: 50px; border: 1px solid #ddd; background: #fff; border-radius: 6px;
+        display: flex; align-items: center; justify-content: center; color: #ccc; cursor: pointer;
+        transition: all 0.2s;
+    }
+    /* Al pasar el mouse: Dorado */
+    .btn-fav:hover { border-color: #fbbf24; color: #fbbf24; }
+    
+    /* Activo (Ya es favorito): Fondo Dorado, Estrella Blanca */
+    .btn-fav.active { background: #fbbf24; color: #fff; border-color: #fbbf24; }
+
+    /* --- TABS --- */
+    .nav-tabs .nav-link { color: #666; font-weight: 600; }
+    .nav-tabs .nav-link.active { color: #000; border-bottom: 2px solid #000 !important; }
+    .tab-content { padding: 30px 0; color: #555; line-height: 1.6; }
+
+    /* --- RESEÑAS --- */
+    .review-item { border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+    .verified-badge { color: #22c55e; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+</style>
+
+<div class="container" style="padding-top: 40px; padding-bottom: 60px;">
+    
+    <nav aria-label="breadcrumb" style="margin-bottom: 30px;">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'tienda:catalogo' %}">Catálogo</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'tienda:catalogo' %}?categoria={{ producto.categoria.id }}">{{ producto.categoria.nombre }}</a></li>
+            <li class="breadcrumb-item active">{{ producto.nombre }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="product-gallery">
+                <div class="main-image-box">
+                    {% with foto=producto.imagenes.first %}
+                        <img id="mainImage" src="{% if foto %}{{ foto.imagen.url }}{% else %}{% static 'img/no-image.png' %}{% endif %}" alt="{{ producto.nombre }}">
+                    {% endwith %}
+                </div>
+                
+                {% if producto.imagenes.all|length > 1 %}
+                <div class="thumbnails">
+                    {% for img in producto.imagenes.all %}
+                        <img src="{{ img.imagen.url }}" class="thumb" onclick="changeImage(this.src)">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="product-sku">SKU: {{ producto.codigo_sku }}</div>
+            <h1 class="product-title">{{ producto.nombre }}</h1>
+            
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="d-flex text-warning">
+                    {% if producto.rating_promedio %}
+                        <span class="fw-bold text-dark me-1">{{ producto.rating_promedio|stringformat:".1f" }}</span>
+                        <span class="material-icons-round fs-6">star</span>
+                    {% else %}
+                        <small class="text-muted">Sin calificaciones</small>
+                    {% endif %}
+                </div>
+                <span class="text-muted">|</span>
+                <a href="#reviews" class="text-decoration-underline text-muted">{{ producto.num_resenas }} Reseñas</a>
+            </div>
+
+            <div class="product-price">${{ producto.precio_venta }}</div>
+
+            {% if stock_total > 10 %}
+                <span class="stock-badge stock-ok"><span class="material-icons-round fs-6 align-middle">check_circle</span> En Stock ({{ stock_total }})</span>
+            {% elif stock_total > 0 %}
+                <span class="stock-badge stock-low"><span class="material-icons-round fs-6 align-middle">warning</span> ¡Últimas {{ stock_total }} unidades!</span>
+            {% else %}
+                <span class="stock-badge stock-out"><span class="material-icons-round fs-6 align-middle">block</span> Agotado</span>
+            {% endif %}
+
+            <p class="text-muted mb-4">
+                {{ producto.descripcion|truncatewords:30 }}
+            </p>
+
+            <form id="addToCartForm">
+                <div class="buy-controls">
+    <div class="qty-input-group">
+        <button type="button" class="qty-btn" onclick="updateDetailQty(-1)">-</button>
+        
+        <input type="number" id="quantity" name="cantidad" 
+               class="qty-value" 
+               value="1" 
+               min="1" 
+               max="{{ stock_total }}" 
+               onchange="validateManualQty(this)">
+               
+        <button type="button" class="qty-btn" onclick="updateDetailQty(1)">+</button>
+    </div>
+
+    <button type="button" class="btn-add-cart" 
+            onclick="addToCartAjax('{{ producto.id }}')"
+            {% if stock_total == 0 %}disabled{% endif %}>
+        {% if stock_total == 0 %}Sin Stock{% else %}Añadir al Carrito{% endif %}
+    </button>
+
+    <a href="{% url 'tienda:toggle_favorito' producto.id %}" 
+       class="btn-fav {% if es_favorito %}active{% endif %}" 
+       title="{% if es_favorito %}Quitar de favoritos{% else %}Añadir a favoritos{% endif %}">
+        <span class="material-icons-round">
+            {% if es_favorito %}star{% else %}star_border{% endif %}
+        </span>
+    </a>
+</div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc" type="button">Descripción</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs" type="button">Ficha Técnica</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button">Reseñas ({{ producto.resenas.count }})</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+                
+                <div class="tab-pane fade show active" id="desc" role="tabpanel">
+                    <p>{{ producto.descripcion }}</p>
+                </div>
+                
+                <div class="tab-pane fade" id="specs" role="tabpanel">
+                    <table class="table table-striped" style="max-width: 600px;">
+                        <tbody>
+                            <tr><th scope="row">Marca</th><td>{{ producto.marca.nombre }}</td></tr>
+                            <tr><th scope="row">Clase</th><td>{{ producto.clase_producto.descripcion }}</td></tr>
+                            <tr><th scope="row">Almacenamiento</th><td>{{ producto.tipo_almacenamiento.descripcion }}</td></tr>
+                            <tr><th scope="row">Impuesto</th><td>{{ producto.impuesto.nombre }} ({{ producto.impuesto.porcentaje }}%)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tab-pane fade" id="reviews" role="tabpanel">
+                    {% if producto.resenas.all %}
+                        {% for resena in producto.resenas.all %}
+                        <div class="review-item">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>{{ resena.usuario.first_name }} {{ resena.usuario.last_name }}</strong>
+                                <small class="text-muted">{{ resena.fecha|date:"d M Y" }}</small>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center mb-2">
+                                <div class="text-warning">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= resena.calificacion %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% if resena.compra_verificada %}
+                                    <span class="verified-badge"><span class="material-icons-round fs-6">verified</span> Compra Verificada</span>
+                                {% endif %}
+                            </div>
+                            <p class="mb-0">{{ resena.comentario }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Aún no hay reseñas para este producto.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if relacionados %}
+    <div class="mt-5">
+        <h3 class="fw-bold mb-4">También te podría interesar</h3>
+        <div class="row row-cols-2 row-cols-md-4 g-4">
+            {% for rel in relacionados %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm">
+                    <a href="{% url 'tienda:producto_detalle' rel.id %}" class="ratio ratio-1x1 bg-light rounded-top overflow-hidden">
+                        {% with img=rel.imagenes.first %}
+                        <img src="{% if img %}{{ img.imagen.url }}{% else %}{% static 'img/no-image.png' %}{% endif %}" 
+                             class="card-img-top object-fit-contain p-3" alt="{{ rel.nombre }}">
+                        {% endwith %}
+                    </a>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ rel.nombre }}</h6>
+                        <p class="card-text fw-bold">${{ rel.precio_venta }}</p>
+                        <a href="{% url 'tienda:producto_detalle' rel.id %}" class="btn btn-outline-dark btn-sm w-100">Ver Detalles</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    // 1. Galería
+    function changeImage(src) {
+        document.getElementById('mainImage').src = src;
+    }
+
+    // 2. Control Cantidad
+    function updateDetailQty(change) {
+        const input = document.getElementById('quantity');
+        let val = parseInt(input.value);
+        const max = parseInt(input.max);
+        
+        val += change;
+        
+        if (val < 1) val = 1;
+        if (val > max) {
+            val = max;
+            Swal.fire('Stock Limitado', `Solo tenemos ${max} unidades disponibles.`, 'warning');
+        }
+        
+        input.value = val;
+    }
+
+    // 3. Añadir Carrito AJAX
+    function addToCartAjax(productId) {
+        const btn = document.querySelector('.btn-add-cart');
+        const originalText = btn.innerText;
+        const qty = document.getElementById('quantity').value;
+
+        btn.disabled = true;
+        btn.innerText = "Agregando...";
+
+        fetch(`/online/agregar/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `cantidad=${qty}`
+        })
+        .then(r => {
+            if(r.status === 401) {
+                window.location.href = "{% url 'tienda:login' %}";
+                return;
+            }
+            return r.json();
+        })
+        .then(data => {
+            if(data && data.status === 'success') {
+                btn.style.background = "#22c55e"; // Verde
+                btn.innerText = "¡Agregado!";
+                
+                // Actualizar TODOS los contadores
+                document.querySelectorAll('.cart-count').forEach(el => {
+                    el.innerText = data.cart_total;
+                    el.style.transform = 'scale(1.2)';
+                    setTimeout(() => el.style.transform = 'scale(1)', 200);
+                });
+
+                setTimeout(() => {
+                    btn.style.background = "#000";
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                Swal.fire('Error', data.error || 'No se pudo agregar', 'error');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerText = originalText;
+        });
+    }
+</script>
+{% endblock %}

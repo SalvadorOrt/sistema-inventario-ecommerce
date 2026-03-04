@@ -1,0 +1,149 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5" style="min-height: 80vh;">
+    
+    <a href="{% url 'tienda:mis_pedidos' %}" class="text-decoration-none text-muted mb-4 d-inline-flex align-items-center gap-2">
+        <span class="material-icons-round" style="font-size: 18px;">arrow_back</span> Volver al Historial
+    </a>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h6 class="text-muted text-uppercase small fw-bold mb-1">Detalle de Orden</h6>
+                    <h2 class="fw-bold mb-0">#{{ pedido.id|stringformat:"05d" }}</h2>
+                    <p class="text-muted small mb-0">{{ pedido.fecha_creacion|date:"d F Y, h:i A" }}</p>
+                </div>
+                <div>
+                    <span class="badge rounded-pill bg-light text-dark border px-3 py-2">
+                        Estado: <strong>{{ pedido.estado_pedido.descripcion }}</strong>
+                    </span>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4 py-3">Producto</th>
+                                <th class="text-center">Precio Unit.</th>
+                                <th class="text-center">Cant.</th>
+                                <th class="text-end pe-4">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in detalles %}
+                            <tr>
+                                <td class="ps-4 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        
+                                        {% with imagen_obj=item.producto.imagenes.first %}
+                                            {% if imagen_obj and imagen_obj.imagen %}
+                                                <div class="position-relative" style="cursor: pointer;" 
+                                                     onclick="verImagenGrande('{{ imagen_obj.imagen.url }}', '{{ item.producto.nombre|escapejs }}')">
+                                                    
+                                                    <img src="{{ imagen_obj.imagen.url }}" 
+                                                         alt="{{ item.producto.nombre }}"
+                                                         class="rounded-3 border bg-white" 
+                                                         style="width: 60px; height: 60px; object-fit: contain; padding: 2px;">
+                                                    
+                                                    <span class="position-absolute bottom-0 end-0 bg-dark text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                                          style="width: 20px; height: 20px; font-size: 12px; transform: translate(20%, 20%); border: 2px solid white;">
+                                                        <i class="bi bi-zoom-in"></i>
+                                                    </span>
+                                                </div>
+                                            {% else %}
+                                                <div class="rounded-3 bg-light d-flex align-items-center justify-content-center border" 
+                                                     style="width: 60px; height: 60px;">
+                                                    <span class="material-icons-round text-muted">image</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                        
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ item.producto.nombre }}</div>
+                                            <div class="small text-muted">SKU: {{ item.producto.codigo_sku }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">${{ item.precio_unitario }}</td>
+                                <td class="text-center fw-bold">{{ item.cantidad_solicitada }}</td>
+                                <td class="text-end pe-4 fw-bold text-dark">${{ item.total_linea }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        
+                        <tfoot class="bg-light border-top">
+                            <tr>
+                                <td colspan="3" class="text-end py-3 text-muted small text-uppercase fw-bold">Subtotal</td>
+                                <td class="text-end pe-4 fw-bold">${{ pedido.subtotal }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end py-3 text-muted small text-uppercase fw-bold">IVA</td>
+                                <td class="text-end pe-4 fw-bold">${{ pedido.monto_iva }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end py-3 text-dark small text-uppercase fw-bolder fs-6">Total Pagado</td>
+                                <td class="text-end pe-4 fw-bolder fs-5 text-primary">${{ pedido.total }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <span class="material-icons-round align-middle me-1 fs-5">local_shipping</span> 
+                                Dirección de Envío
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                {{ pedido.cliente.nombres }} {{ pedido.cliente.apellidos }}<br>
+                                {{ pedido.cliente.direccion }}<br>
+                                {{ pedido.cliente.telefono }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <span class="material-icons-round align-middle me-1 fs-5">info</span> 
+                                Información
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Si tienes algún problema con tu pedido, por favor contáctanos indicando el número de orden <strong>#{{ pedido.id|stringformat:"05d" }}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function verImagenGrande(url, nombre) {
+        Swal.fire({
+            imageUrl: url,
+            imageAlt: nombre,
+            title: nombre,
+            width: 600,
+            imageWidth: '100%',
+            imageHeight: 'auto', // Mantiene la proporción
+            showCloseButton: true,
+            showConfirmButton: false, // Quita el botón "OK"
+            background: '#fff',
+            backdrop: `rgba(0,0,0,0.8)` // Fondo oscuro transparente
+        });
+    }
+</script>
+{% endblock %}

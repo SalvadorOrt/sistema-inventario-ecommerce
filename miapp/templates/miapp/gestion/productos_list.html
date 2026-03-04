@@ -1,0 +1,273 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <h5 class="dash-subtitle">Catálogo Maestro</h5>
+            <h3 class="dash-title">{{ titulo }}</h3>
+        </div>
+        <a href="{% url 'miapp:producto_crear' %}" class="btn-chip">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo Producto
+        </a>
+    </div>
+
+    <div class="card-soft mb-4">
+        <form method="get" id="formFiltros">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="dash-subtitle mb-1">Búsqueda</label>
+                    <input type="text" name="q" value="{{ filtros.q }}" class="form-control form-control-sm" placeholder="SKU, Nombre, Barras...">
+                </div>
+                <div class="col-md-2">
+                    <label class="dash-subtitle mb-1">Marca</label>
+                    <select name="f_marca" class="form-select form-select-sm select2-enable" onchange="this.form.submit()" data-label="Marca">
+                        <option value="">Todas</option>
+                        {% for m in marcas %}
+                            <option value="{{ m.id }}" {% if filtros.f_marca == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="dash-subtitle mb-1">Categoría</label>
+                    <select name="f_cat" class="form-select form-select-sm select2-enable" onchange="this.form.submit()" data-label="Categoría">
+                        <option value="">Todas</option>
+                        {% for c in cats %}
+                            <option value="{{ c.id }}" {% if filtros.f_cat == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="dash-subtitle mb-1">Clase</label>
+                    <select name="f_clase" class="form-select form-select-sm select2-enable" onchange="this.form.submit()" data-label="Clase">
+                        <option value="">Todas</option>
+                        {% for c in clases %}
+                            <option value="{{ c.id }}" {% if filtros.f_clase == c.id|stringformat:"s" %}selected{% endif %}>{{ c.descripcion }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 d-flex justify-content-end align-items-end gap-2">
+                    <button type="submit" class="btn-chip justify-content-center" style="cursor: pointer; min-width: 90px;">
+                        Aplicar
+                    </button>
+                    <button type="button" class="btn-chip" data-bs-toggle="collapse" data-bs-target="#filtrosAvanzados" style="cursor: pointer;">
+                        <i class="bi bi-sliders me-2"></i>Más
+                    </button>
+                </div>
+            </div>
+
+            <div class="collapse mt-3" id="filtrosAvanzados">
+                <div class="row g-2 pt-3 border-top border-soft">
+                    <div class="col-md-2">
+                        <label class="dash-subtitle mb-1">Estrategia</label>
+                        <select name="f_estrategia" class="form-select form-select-sm" data-label="Estrategia">
+                            <option value="">Todas</option>
+                            {% for codigo, nombre in estrategias %}
+                                <option value="{{ codigo }}" {% if filtros.f_estrategia == codigo %}selected{% endif %}>{{ codigo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="dash-subtitle mb-1">Almacenamiento</label>
+                        <select name="f_tipo_alm" class="form-select form-select-sm select2-enable" data-label="Almacén">
+                            <option value="">Todos</option>
+                            {% for t in tipos_alm %}
+                                <option value="{{ t.id }}" {% if filtros.f_tipo_alm == t.id|stringformat:"s" %}selected{% endif %}>{{ t.descripcion }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="dash-subtitle mb-1">Impuesto</label>
+                        <select name="f_impuesto" class="form-select form-select-sm select2-enable" data-label="Impuesto">
+                            <option value="">Todos</option>
+                            {% for i in impuestos %}
+                                <option value="{{ i.id }}" {% if filtros.f_impuesto == i.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ i.nombre }} ({{ i.porcentaje|floatformat:0 }}%)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="dash-subtitle mb-1">Estado</label>
+                        <select name="f_estado" class="form-select form-select-sm" data-label="Estado">
+                            <option value="">Todos</option>
+                            <option value="activos" {% if filtros.f_estado == 'activos' %}selected{% endif %}>Activos</option>
+                            <option value="inactivos" {% if filtros.f_estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+                        </select>
+                    </div>
+                     <div class="col-md-1">
+                        <label class="dash-subtitle mb-1">Min ($)</label>
+                        <input type="number" name="p_min" value="{{ filtros.p_min }}" class="form-control form-control-sm" placeholder="0.00">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="dash-subtitle mb-1">Max ($)</label>
+                        <input type="number" name="p_max" value="{{ filtros.p_max }}" class="form-control form-control-sm" placeholder="0.00">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn-chip w-100 justify-content-center">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="active-filters-container" class="dash-actions" style="display: none;">
+        <span class="label">Filtros activos</span>
+        <a href="{% url 'miapp:productos_gestion' %}" class="btn-chip" style="color: #842029; border-color: #f5c6cb; background-color: #fff;">
+            <i class="bi bi-x-lg me-1"></i> Limpiar
+        </a>
+    </div>
+
+    <div class="table-card">
+        <div class="card-header-compact">
+            <div>
+                <div class="h-title">Resultados</div>
+                <div class="h-sub">Mostrando {{ items|length }} productos</div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th class="ps-4">PRODUCTO</th>
+                        <th>CLASIFICACIÓN</th>
+                        <th>LOGÍSTICA</th>
+                        <th class="text-end">PRECIO</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-end pe-4">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3 flex-shrink-0">
+                                        {% if item.imagen %}
+                                            <img src="{{ item.imagen }}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px; border:1px solid var(--border-soft);">
+                                        {% else %}
+                                            <div style="width: 45px; height: 45px; border-radius: 8px; background:#f0f0f5; display:flex; align-items:center; justify-content:center; color:var(--text-muted);">
+                                                <i class="bi bi-image" style="font-size: 1.2rem;"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.95rem; margin-bottom: 2px;">
+                                            {{ item.obj.nombre }}
+                                        </div>
+                                        <div class="text-muted small font-monospace">
+                                            SKU: {{ item.obj.codigo_sku|default:"--" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="d-flex flex-column" style="line-height: 1.2;">
+                                    <span class="text-main small fw-bold">{{ item.obj.categoria.nombre }}</span>
+                                    <span class="text-muted small">{{ item.obj.marca.nombre }}</span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="d-flex flex-column" style="line-height: 1.2;">
+                                    <span class="small">
+                                        {% if item.obj.estrategia_salida == 'FEFO' %}
+                                            <span class="text-warn fw-bold" style="font-size: 10px;">●</span> FEFO
+                                        {% else %}
+                                            <span class="text-ok fw-bold" style="font-size: 10px;">●</span> FIFO
+                                        {% endif %}
+                                    </span>
+                                    <span class="text-muted small">{{ item.obj.tipo_almacenamiento.descripcion|default:"-" }}</span>
+                                </div>
+                            </td>
+
+                            <td class="text-end fw-bold text-ok">
+                                ${{ item.obj.precio_venta }}
+                            </td>
+
+                            <td class="text-center">
+                                {% if item.obj.es_activo %}
+                                    <span class="badge-soft" style="background:#e9f7ef; color:#0f5132;">Activo</span>
+                                {% else %}
+                                    <span class="badge-soft" style="background:#ffecec; color:#842029;">Inactivo</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'miapp:producto_detalle' item.obj.id %}" class="btn-chip" style="padding: .3rem .6rem;" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'miapp:productos_editar' item.obj.id %}" class="btn-chip" style="padding: .3rem .6rem;" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center py-5 muted">No se encontraron productos.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.select2-enable').select2({
+            width: '100%',
+            placeholder: "Seleccionar...",
+            allowClear: true
+        });
+        
+        const container = $('#active-filters-container');
+        let hasActiveFilters = false;
+        
+        const checkFilter = (val, label) => {
+            if (val && val !== "") {
+                createChip(label, val);
+                hasActiveFilters = true;
+            }
+        };
+
+        checkFilter($('input[name="q"]').val(), 'Búsqueda');
+        
+        $('select').each(function() {
+            const val = $(this).val();
+            if (val && val !== "") {
+                const label = $(this).data('label') || 'Filtro';
+                const text = $(this).find('option:selected').text().trim();
+                createChip(label, text);
+                hasActiveFilters = true;
+            }
+        });
+
+        if (hasActiveFilters) container.css('display', 'flex');
+
+        function createChip(label, value) {
+            const html = `
+                <span class="btn-chip" style="cursor: default;">
+                    <span class="muted me-1" style="font-size: 0.75rem; text-transform: uppercase;">${label}:</span> 
+                    <span>${value}</span>
+                </span>`;
+            $(html).insertBefore(container.find('a'));
+        }
+    });
+</script>
+{% endblock %}

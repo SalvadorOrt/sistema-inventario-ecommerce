@@ -1,0 +1,223 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3 mb-4">
+        <div>
+            <h5 class="dash-subtitle">Expediente de Cliente</h5>
+            <h3 class="dash-title">{{ cliente.nombres }} {{ cliente.apellidos }}</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'miapp:clientes_gestion' %}" class="btn-chip bg-white text-dark border shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Cartera
+            </a>
+            <a href="{% url 'miapp:cliente_editar' cliente.id %}" class="btn-chip text-white" style="background-color: var(--accent-blue); border: none;">
+                <i class="bi bi-pencil-square me-1"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card-soft p-3 border-0 shadow-sm position-relative overflow-hidden h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <label class="small text-muted fw-bold text-uppercase mb-1 d-block">Inversión Total</label>
+                        <span class="fs-3 fw-bold text-dark">${{ metricas.total_gastado|default:"0.00" }}</span>
+                    </div>
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                        <i class="bi bi-cash-stack text-primary fs-4"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted border-top pt-2">Ventas netas históricas</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-soft p-3 border-0 shadow-sm position-relative overflow-hidden h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <label class="small text-muted fw-bold text-uppercase mb-1 d-block">Ticket Promedio</label>
+                        <span class="fs-3 fw-bold text-dark">${{ metricas.ticket_promedio|floatformat:2|default:"0.00" }}</span>
+                    </div>
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                        <i class="bi bi-graph-up-arrow text-success fs-4"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted border-top pt-2">Eficiencia por compra</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-soft p-3 border-0 shadow-sm position-relative overflow-hidden h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <label class="small text-muted fw-bold text-uppercase mb-1 d-block">Última Compra</label>
+                        <span class="fs-3 fw-bold text-dark">
+                            {% if metricas.ultima_vez %}{{ metricas.ultima_vez|date:"d M, Y" }}{% else %}N/A{% endif %}
+                        </span>
+                    </div>
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                        <i class="bi bi-calendar-check text-info fs-4"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted border-top pt-2">Actividad más reciente</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card-soft p-4 mb-4 shadow-sm">
+                <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">Identificación</h6>
+                <div class="mb-4 d-flex align-items-center justify-content-between">
+                    <span class="small text-muted">ID Sistema:</span>
+                    <span class="fw-bold font-monospace bg-light px-2 rounded">{{ cliente.codigo }}</span>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted d-block mb-1">Documento:</label>
+                    <div class="fw-semibold">{{ cliente.tipo_identificacion.codigo|default:"S/I" }}: {{ cliente.numero_identificacion|default:"--" }}</div>
+                </div>
+                <div class="mb-4">
+                    <label class="small text-muted d-block mb-1">País:</label>
+                    <div class="fw-semibold"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ cliente.pais.nombre|default:"Sin país" }}</div>
+                </div>
+
+                <div class="text-center p-3 rounded-3" style="background: linear-gradient(145deg, #f8f9fa, #e9ecef);">
+                    <label class="small text-muted d-block fw-bold mb-2">STATUS DE CLIENTE</label>
+                    {% with total=pedidos.count %}
+                        {% if total > 20 %}
+                            <div class="badge rounded-pill bg-primary px-3 py-2 fs-6 shadow-sm"><i class="bi bi-trophy-fill me-2"></i>VIP</div>
+                        {% elif total > 5 %}
+                            <div class="badge rounded-pill bg-success px-3 py-2 fs-6 shadow-sm"><i class="bi bi-star-fill me-2"></i>Frecuente</div>
+                        {% else %}
+                            <div class="badge rounded-pill bg-secondary px-3 py-2 fs-6 shadow-sm">Nuevo / Ocasional</div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <div class="card-soft p-4 shadow-sm">
+                <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">Favoritos del Cliente</h6>
+                <div class="list-group list-group-flush">
+                    {% for item in top_productos %}
+                    <div class="list-group-item bg-transparent px-0 border-soft d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark small">{{ item.producto__nombre }}</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">SKU: {{ item.producto__codigo_sku }}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-light text-primary border rounded-pill">{{ item.total_qty }} u.</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small">Sin datos de productos.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card-soft p-4 h-100 shadow-sm">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-0">Registro de Compras</h6>
+                    <span class="badge bg-dark rounded-pill">{{ pedidos|length }} pedidos</span>
+                </div>
+                
+                <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
+                    <div class="col-md-7">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="q_ped" value="{{ filtros_ped.q_ped }}" class="form-control border-start-0" placeholder="Código de pedido...">
+                        </div>
+                    </div>
+                    <div class="col-md-5 d-flex gap-2">
+                        <select name="f_estado" class="form-select form-select-sm">
+                            <option value="">Todos los estados</option>
+                            {% for est in estados_pedido %}
+                            <option value="{{ est.id }}" {% if filtros_ped.f_estado == est.id|stringformat:"s" %}selected{% endif %}>{{ est.descripcion }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm">Filtrar</button>
+                    </div>
+                </form>
+
+                <div class="accordion accordion-flush" id="accPedidos">
+                    {% for p in pedidos %}
+                    <div class="accordion-item border rounded-3 mb-2 overflow-hidden shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-3 bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#ped-{{ p.id }}">
+                                <div class="d-flex justify-content-between w-100 pe-3 align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-none d-md-block">
+                                            <i class="bi bi-file-earmark-text text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold font-monospace text-primary small d-block">{{ p.codigo }}</span>
+                                            <small class="text-muted">{{ p.fecha_creacion|date:"d M Y" }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-light text-dark border-0 shadow-none me-2 d-none d-sm-inline-block">{{ p.estado_pedido.descripcion }}</span>
+                                        <span class="fw-bold fs-6 text-dark">${{ p.total }}</span>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="ped-{{ p.id }}" class="accordion-collapse collapse" data-bs-parent="#accPedidos">
+                            <div class="accordion-body bg-light border-top">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless align-middle mb-0" style="font-size: 0.85rem;">
+                                        <thead class="text-muted">
+                                            <tr>
+                                                <th>Ítem</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">Precio</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for d in p.detalles.all %}
+                                            <tr class="border-bottom border-white">
+                                                <td class="py-2 fw-semibold text-dark">{{ d.producto.nombre }}</td>
+                                                <td class="text-center">{{ d.cantidad_solicitada }}</td>
+                                                <td class="text-end text-muted">${{ d.precio_unitario }}</td>
+                                                <td class="text-end fw-bold text-dark">${{ d.subtotal }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted opacity-25"></i>
+                        <p class="text-muted mt-2">No se encontraron pedidos en el historial.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Efecto de elevación sutil para las tarjetas de métricas */
+    .card-soft:hover {
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+    /* Estilo para el botón de acordeón cuando está abierto */
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9ff !important;
+        color: inherit;
+        box-shadow: none;
+    }
+</style>
+
+{% endblock %}

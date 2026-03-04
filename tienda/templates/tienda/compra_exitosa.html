@@ -1,0 +1,37 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container text-center py-5" style="min-height: 70vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    
+    <div style="width: 100px; height: 100px; background: #dcfce7; color: #166534; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 30px;">
+        <span class="material-icons-round" style="font-size: 60px;">check</span>
+    </div>
+
+    <h1 class="fw-bold display-5">¡Gracias por tu compra!</h1>
+    <p class="fs-5 text-muted mb-4">Tu pedido ha sido procesado exitosamente.</p>
+
+    <div class="card p-4 mb-4 shadow-sm" style="max-width: 400px; width: 100%; border: 1px solid #eee;">
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Número de Orden:</span>
+            <span class="fw-bold">#{{ pedido.id|stringformat:"05d" }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Fecha:</span>
+            <span>{{ pedido.fecha_creacion|date:"d M Y" }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Total Pagado:</span>
+            <span class="fw-bold text-success">${{ pedido.total }}</span>
+        </div>
+        <hr>
+        <p class="small text-muted mb-0">Hemos enviado un correo de confirmación a {{ user.email }}</p>
+    </div>
+
+    <div class="d-flex gap-3">
+        <a href="{% url 'tienda:mis_pedidos' %}" class="btn btn-outline-dark fw-bold px-4">Ver mi Pedido</a>
+        <a href="{% url 'tienda:catalogo' %}" class="btn btn-dark fw-bold px-4">Seguir Comprando</a>
+    </div>
+
+</div>
+{% endblock %}

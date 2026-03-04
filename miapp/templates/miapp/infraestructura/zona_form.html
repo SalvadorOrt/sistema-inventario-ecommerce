@@ -1,0 +1,187 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">
+                {% if zona %}
+                    {{ zona.bodega.nombre }} <i class="bi bi-chevron-right mx-1"></i>
+                {% elif request.GET.bodega_nombre %}
+                    {{ request.GET.bodega_nombre }} <i class="bi bi-chevron-right mx-1"></i>
+                {% endif %}
+                Zonas
+            </div>
+            <h3 class="dash-title">
+                {% if modo == 'Crear' %}Nueva Zona Automática{% else %}Editar Zona {{ zona.codigo }}{% endif %}
+            </h3>
+        </div>
+
+        <a href="{% if zona %}{% url 'miapp:bodega_detalle' zona.bodega.id %}{% elif request.GET.bodega %}{% url 'miapp:bodega_detalle' request.GET.bodega %}{% else %}{% url 'miapp:zonas_gestion' %}{% endif %}" 
+           class="btn-chip" style="background: var(--bg-main);">
+            <i class="bi bi-arrow-left me-1"></i> Cancelar y Volver
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-soft shadow-sm border-0 p-4">
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger shadow-sm fade show">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                                <div>
+                                    <strong>Atención:</strong> Revisa los errores abajo.
+                                    {{ form.non_field_errors }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="bi bi-building-fill me-2"></i>Ubicación General
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label class="dash-subtitle mb-1">Bodega / Sede</label>
+                            
+                            {% if form.bodega.field.disabled %}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-primary border-end-0"><i class="bi bi-lock-fill"></i></span>
+                                    <input type="text" class="form-control bg-light border-start-0 fw-bold text-primary" 
+                                           value="{% if zona %}{{ zona.bodega.nombre }}{% else %}{{ request.GET.bodega_nombre }}{% endif %}" 
+                                           readonly>
+                                </div>
+                                <div class="d-none">{{ form.bodega }}</div>
+                                <div class="form-text small text-muted">
+                                    <i class="bi bi-shield-lock"></i> La zona se creará anclada a esta bodega.
+                                </div>
+                            {% else %}
+                                {{ form.bodega }}
+                                {% if form.bodega.errors %}<div class="text-danger small mt-1">{{ form.bodega.errors }}</div>{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="bi bi-file-earmark-text-fill me-2"></i>Detalles
+                        </h6>
+
+                        <div class="mb-3">
+                            <label class="dash-subtitle mb-1">Nombre Descriptivo</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <label class="dash-subtitle mb-1">Tipo de Ambiente</label>
+                                {{ form.tipo_almacenamiento }}
+                                {% if form.tipo_almacenamiento.errors %}<div class="text-danger small mt-1">{{ form.tipo_almacenamiento.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="dash-subtitle mb-1">Estado Operativo</label>
+                                <div class="form-control d-flex align-items-center gap-3" style="min-height: 42px;">
+                                    <div class="form-check form-switch m-0">
+                                        {{ form.es_activo }}
+                                    </div>
+                                    <label class="form-check-label small mb-0 text-muted user-select-none" for="{{ form.es_activo.id_for_label }}">
+                                        Habilitada
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                            <i class="bi bi-save me-2"></i> 
+                            {% if modo == 'Crear' %}Registrar Zona{% else %}Guardar Cambios{% endif %}
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="card-soft bg-warning-subtle border-0 p-4 mb-3">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="bg-white p-2 rounded text-warning shadow-sm">
+                        <i class="bi bi-qr-code fs-4"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-0">Código Automático</h6>
+                </div>
+                
+                {% if modo == 'Crear' %}
+                    <p class="small text-dark opacity-75 mb-0">
+                        El sistema calculará el siguiente código consecutivo <strong>(Z-XX)</strong> disponible para esta bodega al guardar.
+                    </p>
+                    <hr class="border-warning opacity-25">
+                    <ul class="list-unstyled small text-muted font-monospace mb-0">
+                        <li><i class="bi bi-check me-2"></i>Z-01 (Existente)</li>
+                        <li><i class="bi bi-arrow-right-circle-fill text-primary me-2"></i><strong>Z-02 (Nuevo)</strong></li>
+                    </ul>
+                {% else %}
+                    <div class="mt-3 p-2 bg-white rounded border text-center">
+                        <span class="text-muted small">Código Asignado:</span>
+                        <div class="fw-bold text-dark fs-4">{{ zona.codigo }}</div>
+                    </div>
+                    <p class="small text-muted mt-2 text-center mb-0">
+                        El código no se puede modificar para mantener la integridad física.
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="card-soft border-dashed p-4">
+                <h6 class="small fw-bold text-muted text-uppercase mb-3">Jerarquía Lógica:</h6>
+                <div class="d-flex align-items-center gap-2 text-muted">
+                    <i class="bi bi-building"></i>
+                    <i class="bi bi-chevron-right small"></i>
+                    <span class="badge bg-primary">Zona</span>
+                    <i class="bi bi-chevron-right small"></i>
+                    <i class="bi bi-hdd-rack"></i>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Solo activamos Select2 si el campo NO está bloqueado (readonly)
+        // El input readonly no es un select, así que el selector no lo encontrará, lo cual está bien.
+        $('.select2-enable').select2({
+            width: '100%',
+            placeholder: "Seleccionar bodega...",
+            allowClear: true
+        });
+    });
+</script>
+
+<style>
+    /* Input Readonly Estilizado */
+    .form-control:read-only { background-color: #f8f9fa; opacity: 1; color: #495057; border-color: #dee2e6; cursor: not-allowed; }
+    
+    /* Switch */
+    .form-switch .form-check-input { width: 2.5em; height: 1.25em; margin-top: 0; cursor: pointer; }
+    .form-switch { padding-left: 2.5em; display: flex; align-items: center; }
+    
+    .border-dashed { border: 2px dashed #dee2e6 !important; background: transparent; }
+</style>
+{% endblock %}

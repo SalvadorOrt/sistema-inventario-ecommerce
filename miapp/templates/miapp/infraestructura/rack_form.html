@@ -1,0 +1,151 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">
+                {% if zona_padre %}
+                    {{ zona_padre.bodega.nombre }} <i class="bi bi-chevron-right mx-1"></i>
+                    {{ zona_padre.nombre }} <i class="bi bi-chevron-right mx-1"></i>
+                {% endif %}
+                Racks
+            </div>
+            <h3 class="dash-title">
+                {% if modo == 'Crear' %}Nuevo Rack Automático{% else %}Editar Rack {{ form.instance.codigo }}{% endif %}
+            </h3>
+        </div>
+
+        <a href="{% if url_retorno %}{{ url_retorno }}{% elif zona_padre %}{% url 'miapp:zona_detalle' zona_padre.id %}{% else %}{% url 'miapp:racks_gestion' %}{% endif %}" 
+           class="btn-chip" style="background: var(--bg-main);">
+            <i class="bi bi-arrow-left me-1"></i> Cancelar y Volver
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-soft shadow-sm border-0 p-4">
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    
+                    {% if url_retorno %}
+                        <input type="hidden" name="next" value="{{ url_retorno }}">
+                    {% endif %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger shadow-sm fade show" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                                <div>
+                                    <strong>Atención:</strong> Revisa los errores detectados.
+                                    {{ form.non_field_errors }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="bi bi-geo-alt-fill me-2"></i>Ubicación Física
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label class="dash-subtitle mb-1">Zona Perteneciente</label>
+                            
+                            {% if form.zona.field.disabled %}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-primary border-end-0"><i class="bi bi-lock-fill"></i></span>
+                                    <input type="text" class="form-control bg-light border-start-0 fw-bold text-primary" 
+                                           value="{{ zona_padre.nombre }} ({{ zona_padre.codigo }})" readonly>
+                                </div>
+                                <div class="d-none">{{ form.zona }}</div>
+                                <div class="form-text small text-muted">
+                                    <i class="bi bi-shield-lock"></i> El rack se anclará a esta zona.
+                                </div>
+                            {% else %}
+                                {{ form.zona }}
+                                {% if form.zona.errors %}<div class="text-danger small mt-1">{{ form.zona.errors }}</div>{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="bi bi-hdd-rack-fill me-2"></i>Configuración Estructural
+                        </h6>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="dash-subtitle mb-1">Descripción / Referencia</label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.errors %}<div class="text-danger small mt-1">{{ form.descripcion.errors }}</div>{% endif %}
+                            </div>
+
+                            {% if modo == 'Crear' %}
+                                <div class="col-md-7">
+                                    <label class="dash-subtitle mb-1 text-dark fw-bold">
+                                        <i class="bi bi-layers me-1"></i>Altura Inicial (Niveles)
+                                    </label>
+                                    <input type="number" name="cantidad_niveles" 
+                                           class="form-control fw-bold" 
+                                           value="{{ form.cantidad_niveles.value|default:1 }}" 
+                                           placeholder="Ej: 5">
+                                    
+                                    {% if form.cantidad_niveles.errors %}<div class="text-danger small mt-1">{{ form.cantidad_niveles.errors }}</div>{% endif %}
+                                    <div class="form-text small text-primary">
+                                        El sistema creará las ubicaciones automáticamente.
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <div class="col-md-5">
+                                <label class="dash-subtitle mb-1">Estado</label>
+                                <div class="form-control d-flex align-items-center gap-3" style="min-height: 42px;">
+                                    <div class="form-check form-switch m-0">
+                                        {{ form.es_activo }}
+                                    </div>
+                                    <label class="form-check-label small mb-0 text-muted user-select-none" for="{{ form.es_activo.id_for_label }}">
+                                        Habilitado
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                            <i class="bi bi-save me-2"></i> 
+                            {% if modo == 'Crear' %}Generar Estructura{% else %}Guardar Cambios{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2-enable').select2({
+            width: '100%',
+            placeholder: "Seleccionar zona...",
+            allowClear: true
+        });
+    });
+</script>
+
+<style>
+    .form-control:read-only { background-color: #f8f9fa; opacity: 1; color: #495057; border-color: #dee2e6; cursor: not-allowed; }
+    .form-switch .form-check-input { width: 2.5em; height: 1.25em; margin-top: 0; cursor: pointer; }
+    .form-switch { padding-left: 2.5em; display: flex; align-items: center; }
+</style>
+{% endblock %}

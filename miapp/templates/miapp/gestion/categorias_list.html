@@ -1,0 +1,192 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <h5 class="dash-subtitle">Catálogo Maestro</h5>
+            <h3 class="dash-title">Gestión de Categorías</h3>
+        </div>
+        <a href="{% url 'miapp:categoria_crear' %}" class="btn-chip btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nueva Categoría
+        </a>
+    </div>
+
+    <div class="card-soft mb-4">
+        <form method="get" id="formFiltros">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="dash-subtitle mb-1">Búsqueda</label>
+                    <input type="text" name="q" value="{{ filtros.q }}" class="form-control form-control-sm" placeholder="Nombre de categoría o prefijo...">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="dash-subtitle mb-1">Estado</label>
+                    <select name="f_estado" class="form-select form-select-sm select2-enable" data-label="Estado">
+                        <option value="">Todos</option>
+                        <option value="activos" {% if filtros.f_estado == 'activos' %}selected{% endif %}>Activos</option>
+                        <option value="inactivos" {% if filtros.f_estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn-chip justify-content-center w-100" style="background-color: var(--accent-blue); color: white; border: none; cursor: pointer;">
+                        Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="active-filters-container" class="dash-actions" style="display: none;">
+        <span class="label">Filtros activos</span>
+        <a href="{% url 'miapp:categorias_gestion' %}" class="btn-chip" style="color: #842029; border-color: #f5c6cb; background-color: #fff;">
+            <i class="bi bi-x-lg me-1"></i> Limpiar todo
+        </a>
+    </div>
+
+    <div class="table-card">
+        <div class="card-header-compact">
+            <div>
+                <div class="h-title">Resultados</div>
+                <div class="h-sub">Mostrando {{ items|length }} categorías</div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th class="ps-4">NOMBRE DE CATEGORÍA</th>
+                        <th>PREFIJO SKU</th>
+                        <th class="text-center">PRODUCTOS ASOCIADOS</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-end pe-4">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in items %}
+                    <tr>
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width: 35px; height: 35px; border-radius: 8px; background:#f0f0f5; display:flex; align-items:center; justify-content:center; color:var(--text-muted);">
+                                    <i class="bi bi-folder2-open"></i>
+                                </div>
+                                <div class="fw-bold text-main">{{ c.nombre }}</div>
+                            </div>
+                        </td>
+                        
+                        <td>
+                            <span class="badge bg-light text-dark border font-monospace">
+                                {{ c.prefijo_sku }}
+                            </span>
+                        </td>
+                        
+                        <td class="text-center">
+                            {% if c.total_productos > 0 %}
+                                <span class="badge-soft" style="background-color: #e7f1ff; color: #0d6efd;">
+                                    {{ c.total_productos }} items
+                                </span>
+                            {% else %}
+                                <span class="text-muted small" style="opacity: 0.6;">Sin productos</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-center">
+                            {% if c.es_activo %}
+                                <span class="badge-soft" style="background:#e9f7ef; color:#0f5132;">Activo</span>
+                            {% else %}
+                                <span class="badge-soft" style="background:#ffecec; color:#842029;">Inactivo</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'miapp:categoria_detalle' c.id %}" class="btn-chip" style="padding: .3rem .6rem;" title="Ver Detalle y Productos">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                
+                                <a href="{% url 'miapp:categoria_editar' c.id %}" class="btn-chip" style="padding: .3rem .6rem;" title="Editar Categoría">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted opacity-75">
+                                <i class="bi bi-folder-x fs-1 d-block mb-2"></i>
+                                No se encontraron categorías con los filtros actuales.
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        
+        // Inicializar Select2
+        $('.select2-enable').select2({
+            width: '100%',
+            placeholder: "Seleccionar...",
+            allowClear: true,
+            minimumResultsForSearch: 10
+        });
+
+        // Lógica de Chips de Filtros Activos
+        const container = $('#active-filters-container');
+        let hasActiveFilters = false;
+
+        const checkFilter = (val, label) => {
+            if (val && val !== "") {
+                createChip(label, val);
+                hasActiveFilters = true;
+            }
+        };
+
+        // Verificar input de texto
+        checkFilter($('input[name="q"]').val(), 'Búsqueda');
+
+        // Verificar selects
+        $('select').each(function() {
+            const val = $(this).val();
+            if (val && val !== "") {
+                const label = $(this).data('label') || 'Filtro';
+                const text = $(this).find('option:selected').text().trim();
+                createChip(label, text);
+                hasActiveFilters = true;
+            }
+        });
+
+        if (hasActiveFilters) {
+            container.css('display', 'flex');
+        }
+
+        function createChip(label, value) {
+            const html = `
+                <span class="btn-chip" style="cursor: default; background-color: #f8f9fa;">
+                    <span class="text-muted me-1" style="font-size: 0.70rem; text-transform: uppercase; font-weight:600;">${label}:</span> 
+                    <span style="font-weight:500;">${value}</span>
+                </span>
+            `;
+            $(html).insertBefore(container.find('a'));
+        }
+    });
+</script>
+
+{% endblock %}

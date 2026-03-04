@@ -1,0 +1,161 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">
+                <a href="{% url 'miapp:bodega_detalle' zona.bodega.id %}" class="text-decoration-none text-muted">
+                    {{ zona.bodega.nombre }}
+                </a>
+                <i class="bi bi-chevron-right mx-1"></i>
+                Zonas
+            </div>
+            <h3 class="dash-title">{{ zona.nombre }}</h3>
+        </div>
+        
+        <div class="d-flex gap-2">
+            {% if url_retorno %}
+                <a href="{{ url_retorno }}" class="btn-chip" style="background: var(--bg-main); border: 1px solid transparent;">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al Mapa
+                </a>
+            {% else %}
+                <a href="{% url 'miapp:bodega_detalle' zona.bodega.id %}" class="btn-chip" style="background: var(--bg-main); border: 1px solid transparent;">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            {% endif %}
+
+            <a href="{% url 'miapp:zona_editar' zona.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-chip" style="background: white; border: 1px solid #dee2e6;">
+                <i class="bi bi-pencil me-1"></i> Editar
+            </a>
+            
+            <a href="{% url 'miapp:rack_crear' %}?zona={{ zona.id }}&next={{ request.get_full_path|urlencode }}" class="btn-chip btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Nuevo Rack
+            </a>
+        </div>
+    </div>
+
+    <div class="card-soft border-0 mb-4 p-4 bg-white shadow-sm">
+        <div class="row g-4">
+            <div class="col-md-3 border-end">
+                <label class="small text-muted text-uppercase fw-bold">Código</label>
+                <div class="fs-5 fw-bold text-dark">{{ zona.codigo }}</div>
+            </div>
+            <div class="col-md-3 border-end">
+                <label class="small text-muted text-uppercase fw-bold">Ambiente</label>
+                <div class="fs-5 text-dark">
+                    {% if "Frio" in zona.tipo_almacenamiento.descripcion %}
+                        <i class="bi bi-thermometer-snow text-info me-1"></i>
+                    {% endif %}
+                    {{ zona.tipo_almacenamiento.descripcion }}
+                </div>
+            </div>
+            <div class="col-md-3 border-end">
+                <label class="small text-muted text-uppercase fw-bold">Total Racks</label>
+                <div class="fs-5 text-dark">{{ racks|length }}</div>
+            </div>
+            <div class="col-md-3">
+                <label class="small text-muted text-uppercase fw-bold">Estado</label>
+                <div>
+                    {% if zona.es_activo %}
+                        <span class="badge bg-success-subtle text-success rounded-pill">Operativa</span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger rounded-pill">Inactiva</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="card-header-compact">
+            <div class="h-title">Racks Instalados</div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-elegant w-100">
+                <thead>
+                    <tr class="text-uppercase text-muted small border-bottom">
+                        <th class="ps-4 py-3">Código</th>
+                        <th>Descripción</th>
+                        <th>Niveles</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rack in racks %}
+                        <tr style="border-bottom: 1px solid #f9f9f9;">
+                            <td class="ps-4 py-3">
+                                <span class="badge-rack bg-light border text-dark fw-bold px-2 py-1 rounded">
+                                    {{ rack.codigo }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted small">{{ rack.descripcion|default:"--" }}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark">{{ rack.num_ubicaciones|default:rack.ubicaciones.count }}</span> 
+                                <span class="text-muted small">pisos</span>
+                            </td>
+                            <td class="text-center">
+                                {% if rack.es_activo %}
+                                    <i class="bi bi-check-circle-fill text-success small"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger small"></i>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{% url 'miapp:rack_detalle' rack.pk %}?next={{ request.get_full_path|urlencode }}" 
+                                   class="btn-chip p-1 px-2" 
+                                   title="Ver detalle y configurar">
+                                    <i class="bi bi-gear"></i>
+                                </a>
+                                <a href="{% url 'miapp:rack_editar' rack.pk %}?next={{ request.get_full_path|urlencode }}" 
+                                   class="btn-chip p-1 px-2" 
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
+                                No hay racks creados en esta zona.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos mínimos necesarios */
+    .table-elegant th { font-weight: 600; font-size: 0.75rem; letter-spacing: 0.5px; }
+    .table-elegant td { vertical-align: middle; font-size: 0.9rem; }
+    .table-elegant tbody tr:hover { background-color: #f8f9fa; }
+    .badge-rack { font-family: monospace; letter-spacing: 1px; }
+    
+    .btn-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.2s;
+    }
+    .btn-chip:hover { opacity: 0.8; text-decoration: none; color: inherit; }
+    .btn-primary { background-color: var(--bg-main, #0d6efd) !important; color: white !important; }
+</style>
+{% endblock %}

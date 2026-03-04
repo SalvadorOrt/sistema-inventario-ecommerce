@@ -1,0 +1,68 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">Configuración <i class="bi bi-chevron-right mx-1"></i> Logística</div>
+            <h3 class="dash-title">Perfiles de Caducidad</h3>
+        </div>
+        <a href="{% url 'miapp:perfil_caducidad_crear' %}" class="btn-chip btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo Perfil
+        </a>
+    </div>
+
+    <div class="card-soft mb-4 p-3">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar perfil...">
+            <select name="estado" class="form-select" style="width: 150px;" onchange="this.form.submit()">
+                <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+                <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="table-card">
+        <table class="table-elegant w-100">
+            <thead>
+                <tr>
+                    <th class="ps-4">CÓDIGO</th>
+                    <th class="text-center">REGLA</th>
+                    <th class="text-center">BLOQUEO</th>
+                    <th class="text-center">ESTRATEGIA</th>
+                    <th class="text-end pe-4">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-bold">{{ item.codigo }}</div>
+                        <div class="small text-muted">{{ item.descripcion }}</div>
+                    </td>
+                    <td class="text-center">
+                        {% if item.requiere_caducidad %}
+                            <span class="badge bg-warning-subtle text-warning-emphasis">Caducidad Obligatoria</span>
+                        {% else %}
+                            <span class="badge bg-light text-muted">Sin Caducidad</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="fw-bold">{{ item.dias_bloqueo_previo }} días</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge border bg-info-subtle text-info-emphasis">
+                            {{ item.estrategia_requerida|default:"Libre" }}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'miapp:perfil_caducidad_editar' item.pk %}" class="btn-chip border"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center py-4">No hay perfiles configurados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

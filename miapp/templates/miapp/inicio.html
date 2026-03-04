@@ -1,0 +1,312 @@
+{# miapp/templates/miapp/inicio.html #}
+{% extends "miapp/base.html" %}
+{% block title %}Dashboard | Sistema WMS{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+
+  {# ===== Header ===== #}
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Panel de Control</h1>
+      <p class="dash-subtitle">
+        <span class="badge-soft">{{ bodega_nombre }}</span>
+        <span class="muted">—</span>
+        <span class="muted">{{ hoy }}</span>
+      </p>
+    </div>
+
+    <div class="dash-meta">
+      {% if es_admin and bodegas_lista %}
+        <form method="get">
+          <select
+            name="bodega"
+            class="form-select form-select-sm js-select2 js-select2-submit"
+            data-placeholder="Consolidado Global"
+            data-allow-clear="true"
+            style="width: 260px;"
+          >
+            <option value="" {% if not bodega_actual %}selected{% endif %}>Consolidado Global</option>
+            {% for b in bodegas_lista %}
+              <option value="{{ b.id }}" {% if bodega_actual|stringformat:"s" == b.id|stringformat:"s" %}selected{% endif %}>
+                {{ b.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ===== Alertas (SOLO necesarias y accionables) ===== #}
+  {% if alertas %}
+    <div class="dash-alerts">
+      {% for a in alertas %}
+        <div
+          class="alert-soft {{ a.tipo|default:'info' }}"
+          data-alert
+          data-alert-id="{{ a.id|default:'' }}"
+        >
+          <div class="d-flex justify-content-between gap-2">
+            <div>
+              <p class="a-title">{{ a.titulo|default:"Aviso" }}</p>
+              {% if a.msg %}
+                <p class="a-msg">{{ a.msg }}</p>
+              {% endif %}
+            </div>
+
+            <button type="button" class="alert-close" aria-label="Cerrar">×</button>
+          </div>
+
+          {% if a.items %}
+            <ul>
+              {% for it in a.items %}
+                <li>{{ it }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if a.footer %}
+            <div class="a-foot">{{ a.footer }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# ===== Acciones rápidas (SIN iconos) ===== #}
+  {% if acciones_rapidas %}
+    <div class="dash-actions">
+      <span class="label">Accesos directos</span>
+      {% for ac in acciones_rapidas %}
+        <a href="{% url ac.url %}" class="btn-chip">{{ ac.nombre }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# ===== KPIs ===== #}
+  {% if tarjetas %}
+    <div class="row g-3 mb-4">
+      {% for t in tarjetas %}
+        <div class="col-6 col-md-3">
+          <div class="kpi-minimal h-100">
+            <div class="kpi-label">{{ t.titulo }}</div>
+            <div class="kpi-value
+              {% if t.color == 'success' %}text-ok{% elif t.color == 'danger' %}text-bad{% elif t.color == 'warning' %}text-warn{% endif %}">
+              {{ t.valor }}
+            </div>
+            {% if t.subtitulo %}
+              <div class="kpi-sub">{{ t.subtitulo }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# ===== Paneles ===== #}
+  <div class="row g-4">
+
+    {% if paneles.pedidos %}
+      <div class="col-12 col-xl-6">
+        <div class="table-card">
+          <div class="card-header-compact">
+            <div>
+              <div class="h-title">Últimos Pedidos</div>
+              <div class="h-sub">Actividad comercial reciente</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table-elegant table-sm">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">CÓDIGO</th>
+                  <th>CLIENTE</th>
+                  <th class="text-end" style="width: 120px;">VALOR</th>
+                  <th style="width: 140px;">ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in paneles.pedidos %}
+                  <tr>
+                    <td class="fw-bold" style="color:var(--accent-blue)">{{ p.codigo }}</td>
+                    <td class="td-truncate">
+                      <div class="text-truncate text-muted">
+                        {{ p.cliente.nombres|default:"C. Final"|truncatechars:22 }}
+                      </div>
+                    </td>
+                    <td class="text-end fw-bold">${{ p.total }}</td>
+                    <td><span class="badge-soft">{{ p.estado_pedido.codigo|default:p.estado_pedido|truncatechars:14 }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    {% endif %}
+
+    {% if paneles.criticos %}
+      <div class="col-12 col-xl-6">
+        <div class="table-card">
+          <div class="card-header-compact">
+            <div>
+              <div class="h-title">Stock Crítico</div>
+              <div class="h-sub">Productos bajo mínimo</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table-elegant table-sm">
+              <thead>
+                <tr>
+                  <th>PRODUCTO</th>
+                  <th style="width: 160px;">BODEGA</th>
+                  <th class="text-end" style="width: 110px;">ACTUAL</th>
+                  <th class="text-end" style="width: 110px;">MÍNIMO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inv in paneles.criticos %}
+                  <tr>
+                    <td class="td-truncate">
+                      <div class="text-truncate fw-bold">{{ inv.producto.nombre|default:inv.producto|truncatechars:34 }}</div>
+                    </td>
+                    <td class="td-truncate">
+                      <div class="text-truncate text-muted">{{ inv.bodega.nombre|default:inv.bodega|truncatechars:18 }}</div>
+                    </td>
+                    <td class="text-end fw-bold text-bad">{{ inv.stock_actual }}</td>
+                    <td class="text-end text-muted">{{ inv.stock_minimo }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    {% endif %}
+
+    {% if paneles.transferencias %}
+      <div class="col-12 col-xl-6">
+        <div class="table-card">
+          <div class="card-header-compact">
+            <div>
+              <div class="h-title">Transferencias</div>
+              <div class="h-sub">Pendientes / en tránsito</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table-elegant table-sm">
+              <thead>
+                <tr>
+                  <th style="width: 180px;">ORIGEN → DESTINO</th>
+                  <th style="width: 160px;">CÓDIGO</th>
+                  <th>ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tr in paneles.transferencias %}
+                  <tr>
+                    <td class="td-truncate">
+                      <div class="text-truncate">
+                        <span class="text-muted">{{ tr.bodega_origen.nombre|default:tr.bodega_origen|truncatechars:14 }}</span>
+                        <span class="muted"> → </span>
+                        <span class="text-muted">{{ tr.bodega_destino.nombre|default:tr.bodega_destino|truncatechars:14 }}</span>
+                      </div>
+                    </td>
+                    <td class="fw-bold">{{ tr.codigo }}</td>
+                    <td><span class="badge-soft">{{ tr.get_estado_display|default:tr.estado|truncatechars:16 }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    // Se cierra "por día" para evitar ruido (no acumula histórico)
+    const todayKey = "{{ hoy|date:'Y-m-d' }}";
+    const storeKey = "dash_alerts_closed:" + todayKey;
+
+    function loadClosedSet() {
+      try {
+        const raw = localStorage.getItem(storeKey);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch (e) {
+        return new Set();
+      }
+    }
+
+    function saveClosedSet(set) {
+      try { localStorage.setItem(storeKey, JSON.stringify(Array.from(set))); } catch (e) {}
+    }
+
+    function applyClosed() {
+      const closed = loadClosedSet();
+      document.querySelectorAll("[data-alert]").forEach(el => {
+        const id = (el.getAttribute("data-alert-id") || "").trim();
+        if (id && closed.has(id)) el.style.display = "none";
+      });
+    }
+
+    function wireCloseButtons() {
+      document.querySelectorAll("[data-alert] .alert-close").forEach(btn => {
+        btn.addEventListener("click", function() {
+          const wrap = btn.closest("[data-alert]");
+          if (!wrap) return;
+
+          const id = (wrap.getAttribute("data-alert-id") || "").trim();
+          if (id) {
+            const closed = loadClosedSet();
+            closed.add(id);
+            saveClosedSet(closed);
+          }
+          wrap.style.display = "none";
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      applyClosed();
+      wireCloseButtons();
+
+      // Auto submit Select2 (si está cargado en base.html)
+      if (window.jQuery && jQuery.fn.select2) {
+        const $sels = jQuery(".js-select2");
+        $sels.each(function() {
+          const $el = jQuery(this);
+          const placeholder = $el.data("placeholder") || "";
+          const allowClear = String($el.data("allow-clear")) === "true";
+
+          $el.select2({
+            width: "resolve",
+            placeholder: placeholder,
+            allowClear: allowClear
+          });
+
+          if ($el.hasClass("js-select2-submit")) {
+            $el.on("change", function() {
+              const form = $el.closest("form");
+              if (form && form.length) form[0].submit();
+            });
+          }
+        });
+      }
+    });
+  })();
+</script>
+{% endblock %}

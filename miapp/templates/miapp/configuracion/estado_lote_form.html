@@ -1,0 +1,109 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-7 col-lg-6">
+            <div class="card-soft shadow-sm border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ modo }} Estado de Lote</h4>
+                        <p class="text-muted small mb-0">Define las reglas de disponibilidad para el inventario.</p>
+                    </div>
+                    <a href="{% url 'miapp:estados_lote_gestion' %}" class="btn-close"></a>
+                </div>
+
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="dash-subtitle mb-1">Código del Estado</label>
+                            {{ form.codigo }}
+                            {% if form.codigo.errors %}<div class="text-danger small">{{ form.codigo.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-12 mb-4">
+                            <label class="dash-subtitle mb-1">Descripción / Notas</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}<div class="text-danger small">{{ form.descripcion.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-25">
+
+                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-gear-fill me-2"></i>Comportamiento del Stock</h6>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="bg-light p-3 rounded border h-100">
+                                <div class="form-check form-switch ps-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-check-label fw-bold cursor-pointer" for="{{ form.marca_disponible.id_for_label }}">Apto para Venta</label>
+                                        {{ form.marca_disponible }}
+                                    </div>
+                                    <small class="text-muted d-block mt-1">El stock será visible para los vendedores.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="bg-light p-3 rounded border h-100">
+                                <div class="form-check form-switch ps-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-check-label fw-bold cursor-pointer text-danger" for="{{ form.marca_bloqueado.id_for_label }}">Bloqueado</label>
+                                        {{ form.marca_bloqueado }}
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Impide cualquier movimiento de salida.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="bg-light p-3 rounded border">
+                                <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <label class="form-check-label fw-bold cursor-pointer" for="{{ form.es_vendible.id_for_label }}">Estado Vendible</label>
+                                        <small class="text-muted d-block">Define si el producto mantiene su valor comercial en este estado.</small>
+                                    </div>
+                                    {{ form.es_vendible }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 bg-white p-3 rounded border border-success-subtle">
+                        <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between m-0">
+                            <label class="form-check-label fw-bold cursor-pointer" for="{{ form.es_activo.id_for_label }}">Estado del registro (Activo)</label>
+                            {{ form.es_activo }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold shadow-sm">
+                            <i class="bi bi-save me-2"></i> Guardar Estado
+                        </button>
+                        <a href="{% url 'miapp:estados_lote_gestion' %}" class="btn btn-link text-muted text-decoration-none btn-sm">Cancelar y volver</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilo para que los switches de Bootstrap se vean grandes y profesionales */
+    .form-switch .form-check-input { 
+        width: 3em; 
+        height: 1.5em; 
+        margin-top: 0; 
+        cursor: pointer; 
+        float: none; 
+        vertical-align: middle; 
+    }
+    .cursor-pointer { cursor: pointer; }
+</style>
+{% endblock %}

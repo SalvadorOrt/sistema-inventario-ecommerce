@@ -1,0 +1,257 @@
+/* miapp/static/miapp/css/app.css */
+:root {
+    --accent-blue: #0071e3;
+    --text-main: #111;
+    --text-muted: #6e6e73;
+    --border-soft: #d2d2d7;
+    --bg-soft: #ffffff;
+    --white: #ffffff;
+}
+
+body {
+    background-color: var(--bg-soft);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-main);
+}
+
+/* Reutiliza tu estilo de botones para todo el sistema */
+.btn-primary {
+    background-color: var(--accent-blue);
+    border: red;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.btn-primary:hover {
+    background-color: #005bbd;
+    transform: translateY(-1px);
+}
+
+/* Estilo para las Cards de inventario y formularios */
+.card-soft {
+    background: var(--white);
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    padding: 25px;
+}
+
+/* Estilo para inputs globales */
+.form-control {
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+}
+
+/* Links en menú lateral */
+.nav-link-soft {
+    color: var(--text-main);
+    transition: all 0.2s ease;
+    background: transparent;
+}
+.nav-link-soft:hover {
+    background-color: #f0f0f5;
+    color: var(--accent-blue);
+}
+.nav-link-soft.active {
+    background-color: #e8f2ff;
+    color: var(--accent-blue);
+}
+
+/* Hamburguesa */
+.hamburger-icon span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background-color: var(--text-main);
+    margin: 4px 0;
+    border-radius: 2px;
+}
+
+/* Ajustes de espaciado para el main */
+.page-wrap {
+    min-height: calc(100vh - 80px);
+}
+
+/* Alertas globales */
+.alert-error { background-color: #ffecec; color: #842029; }
+.alert-success { background-color: #e9f7ef; color: #0f5132; }
+.alert-warning { background-color: #fff4e5; color: #664d03; }
+.alert-info { background-color: #e8f2ff; color: #003a75; }
+
+/* =========================================================
+   Dashboard Minimal (acoplado a variables :root)
+   ========================================================= */
+
+.dash-wrap { max-width: 1200px; margin: 0 auto; }
+
+/* Header compacto */
+.dash-header{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:12px; padding-bottom:10px; border-bottom:1px solid var(--border-soft);
+  margin-bottom:14px;
+}
+.dash-title{ font-size:1.05rem; font-weight:750; letter-spacing:.2px; margin:0; }
+.dash-subtitle{ font-size:.82rem; color:var(--text-muted); margin:4px 0 0; line-height:1.2; }
+.dash-meta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.badge-soft{
+  background:var(--bg-soft); color:var(--text-main);
+  border:0px solid var(--border-soft); border-radius:999px;
+  padding:.28rem .55rem; font-size:.75rem; font-weight:650; line-height:1;
+  display:inline-flex; align-items:center;
+}
+
+/* ACCIONES: simples, sin iconos */
+.dash-actions{
+  display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+  margin: 10px 0 18px;
+}
+.dash-actions .label{ font-size:.82rem; color: var(--text-muted); margin-right:6px; }
+.btn-chip{
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: .35rem .65rem;
+  font-size: .82rem;
+  font-weight: 650;
+  color: var(--text-main);
+  text-decoration: none;
+  transition: all .15s ease;
+  display:inline-flex;
+  align-items:center;
+}
+.btn-chip:hover{
+  border-color: var(--accent-blue);
+  background: #f0f7ff;
+  color: var(--text-main);
+}
+
+/* KPIs compactos */
+.kpi-minimal{
+  border:1px solid var(--border-soft);
+  border-radius:14px;
+  padding:12px;
+  background:var(--white);
+}
+.kpi-label{
+  font-size:.72rem; text-transform:uppercase; letter-spacing:.5px;
+  color:var(--text-muted); line-height:1.2;
+}
+.kpi-value{ font-size:1.15rem; font-weight:800; margin-top:6px; line-height:1.1; }
+.kpi-sub{ font-size:.78rem; color:var(--text-muted); margin-top:4px; line-height:1.2; }
+.text-ok { color:#0f5132; } .text-bad { color:#842029; } .text-warn { color:#664d03; }
+
+/* Paneles + tablas minimal */
+.table-card{
+  border:1px solid var(--border-soft);
+  border-radius:14px;
+  background:var(--white);
+  overflow:hidden;
+}
+.card-header-compact{
+  padding:10px 14px;
+  border-bottom:1px solid var(--border-soft);
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px;
+}
+.h-title{ font-size:.95rem; font-weight:750; letter-spacing:.2px; line-height:1.2; margin:0; }
+.h-sub{ font-size:.82rem; color:var(--text-muted); line-height:1.2; margin:3px 0 0; }
+
+.table-elegant{
+  width:100%;
+  margin:0;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.table-elegant thead th{
+  font-size:.72rem;
+  color:var(--text-muted);
+  font-weight:800;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  background:var(--white);
+  border-bottom:1px solid var(--border-soft);
+  padding:10px 12px;
+  white-space:nowrap;
+}
+.table-elegant tbody td{
+  padding:10px 12px;
+  font-size:.88rem;
+  border-top:1px solid rgba(210,210,215,.55);
+  vertical-align:middle;
+}
+.table-elegant tbody tr:hover{ background:rgba(0,113,227,.04); }
+
+.td-truncate{ max-width:1px; }
+.td-truncate .text-truncate{ max-width:100%; }
+.muted{ color: var(--text-muted); }
+
+
+/* =========================
+   Select2 (tema minimal, acoplado al sistema)
+   ========================= */
+
+.select2-container { font-size: .88rem; }
+
+.select2-container--default .select2-selection--single {
+  height: 31px; /* similar a form-select-sm */
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--text-main);
+  line-height: 29px;
+  padding-left: 10px;
+  padding-right: 26px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 29px;
+  right: 6px;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 .2rem rgba(0,113,227,.12);
+}
+
+.select2-dropdown {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 8px 10px;
+  outline: none;
+}
+
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+  background: rgba(0,113,227,.08);
+  color: var(--text-main);
+}
+.alert-close{
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.alert-close:hover{
+  color: var(--text-main);
+}
+
+/* Animación al cerrar */
+.alert-soft{
+  transition: opacity .2s ease, transform .2s ease, height .2s ease;
+}

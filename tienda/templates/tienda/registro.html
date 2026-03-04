@@ -1,0 +1,263 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear Cuenta | Tienda Online</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml;utf8,
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
+      <g fill='none'
+         stroke='currentColor'
+         stroke-width='0.8'
+         vector-effect='non-scaling-stroke'
+         shape-rendering='geometricPrecision'>
+        <rect x='2' y='2' width='5' height='5'/>
+        <rect x='9' y='2' width='5' height='5'/>
+        <rect x='16' y='2' width='5' height='5'/>
+        <rect x='2' y='9' width='5' height='5'/>
+        <rect x='9' y='9' width='5' height='5'/>
+        <rect x='16' y='9' width='5' height='5'/>
+        <rect x='2' y='16' width='5' height='5'/>
+        <rect x='9' y='16' width='5' height='5'/>
+        <rect x='16' y='16' width='5' height='5'/>
+      </g>
+    </svg>"
+  >
+
+  <style>
+    :root{
+      --bg:#f7f8fa;
+      --card:#ffffff;
+      --text:#111;
+      --muted:#6b7280;
+      --border:#e8e8e8;
+      --shadow:0 14px 34px rgba(0,0,0,.08);
+      --focus:rgba(17,17,17,.08);
+
+      /* BOTONES (gris antes del hover) */
+      --btn-bg:#ffffff;
+      --btn-text:#6b7280;          /* gris elegante */
+      --btn-border:#cfcfcf;        /* gris claro */
+      --btn-hover-bg:#2bb0f0;
+      --btn-hover-text:#ffffff;
+      --btn-hover-border:#2bb0f0;
+
+      --error-bg:#fff5f5;
+      --error-text:#c62828;
+      --error-border:#ffd6d6;
+    }
+
+    *{ box-sizing:border-box }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:18px;
+      font-family:'Montserrat',sans-serif;
+      background:
+        radial-gradient(900px 400px at 20% 10%, rgba(43,176,240,.12), transparent 60%),
+        radial-gradient(800px 380px at 90% 20%, rgba(0,0,0,.06), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    .registro-container{
+      width:100%;
+      max-width:390px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:22px 22px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .registro-container::before{
+      content:"";
+      position:absolute;
+      top:0; left:0; right:0;
+      height:4px;
+      background:linear-gradient(90deg,#2bb0f0,#a5dcf6,#2bb0f0);
+    }
+
+    .header{
+      margin-bottom:14px;
+    }
+
+    .header h2{
+      margin:10px 0 6px;
+      font-size:1.25rem;
+    }
+
+    .header p{
+      margin:0;
+      font-size:.88rem;
+      color:var(--muted);
+    }
+
+    .alert-error{
+      margin:10px 0;
+      padding:8px 10px;
+      font-size:.85rem;
+      border-radius:10px;
+      background:var(--error-bg);
+      color:var(--error-text);
+      border:1px solid var(--error-border);
+    }
+
+    form{ margin-top:8px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .form-group{ margin-bottom:8px; }
+    .span-2{ grid-column:span 2; }
+
+    label{
+      display:block;
+      margin-bottom:4px;
+      font-size:.68rem;
+      font-weight:600;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"]{
+      width:100%;
+      padding:6px 10px;
+      font-size:.84rem;
+      border-radius:8px;
+      border:1px solid #e3e3e3;
+      font-family:inherit;
+      background:#fff;
+      transition:border-color .2s, box-shadow .2s;
+    }
+
+    input:focus{
+      outline:none;
+      border-color:#111;
+      box-shadow:0 0 0 2px var(--focus);
+    }
+
+    /* BOTONES UNIFICADOS */
+    .btn-submit,
+    .btn-link{
+      display:block;          /* fuerza misma anchura */
+      width:100%;
+      padding:8px 12px;
+      font-size:.82rem;
+      font-weight:600;
+      border-radius:9px;
+      border:1px solid var(--btn-border);
+      background:var(--btn-bg);
+      color:var(--btn-text);
+      cursor:pointer;
+      text-decoration:none;
+      text-align:center;
+      transition:background .25s, color .25s, border-color .25s;
+    }
+
+    .btn-submit{
+      margin-top:6px;
+    }
+
+    .btn-submit:hover,
+    .btn-link:hover{
+      background:var(--btn-hover-bg);
+      color:var(--btn-hover-text);
+      border-color:var(--btn-hover-border);
+    }
+
+    .separator{
+      margin:14px 0;
+      border:0;
+      border-top:1px solid #eee;
+    }
+
+    @media(max-width:420px){
+      .grid{ grid-template-columns:1fr; }
+      .span-2{ grid-column:auto; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="registro-container">
+
+  <div class="header">
+    <h2>Crear Cuenta</h2>
+    <p>Completa tus datos para crear tu cuenta.</p>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert-error">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <div class="grid">
+      <div class="form-group">
+        <label>Nombres</label>
+        <input type="text" name="nombre" required value="{{ nombre|default:'' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Apellidos</label>
+        <input type="text" name="apellido" required value="{{ apellido|default:'' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Cédula</label>
+        <input type="text" name="cedula" maxlength="10" required value="{{ cedula|default:'' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" name="telefono" required value="{{ telefono|default:'' }}">
+      </div>
+
+      <div class="form-group span-2">
+        <label>Correo electrónico</label>
+        <input type="email" name="email" required value="{{ email|default:'' }}">
+      </div>
+
+      <div class="form-group span-2">
+        <label>Contraseña</label>
+        <input type="password" name="password" required>
+      </div>
+    </div>
+
+    <button class="btn-submit" type="submit">Registrarse</button>
+  </form>
+
+  <hr class="separator">
+
+  <a class="btn-link" href="{% url 'tienda:inicio' %}">
+
+    Volver a Iniciar sesión
+  </a>
+
+</div>
+
+</body>
+</html>

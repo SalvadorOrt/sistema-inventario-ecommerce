@@ -1,0 +1,286 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 mt-3">
+        <div class="card-body p-4">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <h4 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Mapa de Distribución
+                </h4>
+                {% if zona_seleccionada %}
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="filtroMapa" class="form-control bg-light border-start-0" placeholder="Buscar en el mapa..." autocomplete="off">
+                        </div>
+                        <span class="badge bg-dark px-3 py-2 fw-normal rounded-pill shadow-sm">
+                            <i class="bi bi-geo-alt-fill me-1 text-danger"></i> {{ zona_seleccionada.nombre }}
+                        </span>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+    <label class="form-label small fw-bold text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px;">Sede / Bodega</label>
+    
+    {% if es_admin %}
+        <select name="bodega" class="form-select select2-enable" onchange="this.form.submit()" style="width: 100%;">
+            <option value="">-- Buscar Bodega --</option>
+            {% for b in bodegas %}
+                <option value="{{ b.id }}" {% if bodega_seleccionada.id == b.id %}selected{% endif %}>
+                    {{ b.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    {% else %}
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-muted">
+                <i class="bi bi-building-lock"></i>
+            </span>
+            <input type="text" class="form-control bg-white border-start-0 fw-bold text-dark" 
+                   value="{{ bodega_seleccionada.nombre }}" readonly>
+            
+            <input type="hidden" name="bodega" value="{{ bodega_seleccionada.id }}">
+        </div>
+    {% endif %}
+</div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px;">Zona de Almacenamiento</label>
+                    <select name="zona" class="form-select select2-enable" onchange="this.form.submit()" {% if not bodega_seleccionada %}disabled{% endif %} style="width: 100%;">
+                        <option value="">-- Buscar Zona --</option>
+                        {% for z in zonas_disponibles %}
+                            <option value="{{ z.id }}" {% if zona_seleccionada.id == z.id %}selected{% endif %}>
+                                {{ z.nombre }} ({{ z.codigo }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+            {% if zona_seleccionada and es_admin %}
+                <a href="{% url 'miapp:zona_detalle' zona_seleccionada.id %}?next={{ request.get_full_path|urlencode }}" 
+                class="btn btn-outline-dark w-100 fw-bold border-2">
+                    <i class="bi bi-gear-wide-connected me-2"></i>Gestionar Zona
+                </a>
+            {% endif %}
+        </div>
+            </form>
+        </div>
+    </div>
+
+    {% if zona_seleccionada %}
+        {% if racks_header %}
+            <div class="card border-0 p-0 overflow-hidden shadow-sm rounded-3">
+                <div class="bg-light px-4 py-2 border-bottom d-flex justify-content-end gap-3 small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">
+                    <span class="d-flex align-items-center"><i class="bi bi-square-fill text-dark me-1"></i> Ocupado</span>
+                    <span class="d-flex align-items-center"><i class="bi bi-app text-success me-1"></i> Disponible</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0 text-center align-middle map-table border-light">
+                        <thead class="bg-dark text-white">
+                            <tr>
+                                <th class="bg-secondary text-white align-middle" style="width: 70px; letter-spacing: 1px;">NIVEL</th>
+                                {% for r in racks_header %}
+                                    <th style="min-width: 150px; padding: 12px;">
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold fs-6">RACK {{ r.codigo }}</span>
+                                            <span class="text-white-50 small fw-light">{{ r.descripcion|truncatechars:15 }}</span>
+                                        </div>
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        
+                        <tbody>
+                            {% for fila in matriz %}
+                            <tr>
+                                <td class="bg-light text-secondary fw-bold border-end" style="font-family: monospace; font-size: 1.1rem;">
+                                    {{ fila.nivel|stringformat:"02d" }}
+                                </td>
+                                
+                                {% for celda in fila.celdas %}
+                                    <td class="p-2 position-relative bg-white border-light">
+                                       {% if celda %}
+    {% if celda.lotes_activos %}
+        <div class="card h-100 border border-secondary shadow-sm overflow-hidden map-card occupied" 
+             style="min-height: 110px;"
+             data-search="{{ celda.lotes_activos.0.producto.nombre|lower }} {{ celda.lotes_activos.0.lote|lower }}">
+            
+            <div class="bg-dark text-white fw-bold px-1 d-flex align-items-center justify-content-center text-center" 
+                 style="height: 30px; font-size: 0.7rem; line-height: 1.1;">
+                {{ celda.lotes_activos.0.producto.nombre|truncatechars:20 }}
+            </div>
+            
+            <div class="card-body p-0 d-flex flex-column justify-content-center align-items-center bg-white">
+                {% if celda.lotes_activos|length > 1 %}
+                    <div class="fw-bold fs-4 text-dark lh-1 mt-1">
+                        {{ celda.lotes_activos.0.cantidad_disponible }}<span class="fs-6 text-muted">+</span>
+                    </div>
+                    <span class="badge bg-danger rounded-pill" style="font-size: 0.55rem; transform: scale(0.8);">MIXTO</span>
+                {% else %}
+                    <div class="fw-bold fs-3 text-dark lh-1">{{ celda.lotes_activos.0.cantidad_disponible }}</div>
+                    <small class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.5px;">Unidades</small>
+                {% endif %}
+            </div>
+
+            <div class="bg-light border-top text-muted small py-1" style="font-size: 0.65rem;">
+                Lote: <span class="fw-bold text-dark font-monospace">{{ celda.lotes_activos.0.lote }}</span>
+            </div>
+            
+            <a href="{% url 'miapp:rack_detalle' celda.rack.id %}?next={{ request.get_full_path|urlencode }}" 
+               class="stretched-link" 
+               title="Ver detalle">
+            </a>
+        </div>
+    {% else %}
+        <div class="card h-100 border-dashed bg-light opacity-50 map-card free" 
+             style="min-height: 110px;" data-search="libre vacio">
+            <div class="card-body p-1 d-flex flex-column justify-content-center align-items-center">
+                <small class="text-success fw-bold" style="font-size: 0.75rem;">LIBRE</small>
+            </div>
+            
+            <a href="{% url 'miapp:rack_detalle' celda.rack.id %}?next={{ request.get_full_path|urlencode }}" 
+               class="stretched-link">
+            </a>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="bg-secondary opacity-10 h-100 rounded-1" style="min-height: 110px;"></div>
+{% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted bg-white rounded shadow-sm">
+                <i class="bi bi-cone-striped fs-1 mb-3 d-block opacity-25"></i>
+                <h5 class="fw-light">Sin Configuración</h5>
+                <p class="small text-muted">Esta zona no tiene racks instalados.</p>
+            </div>
+        {% endif %}
+    
+    {% else %}
+        <div class="card border-0 shadow-sm p-5 text-center bg-white rounded-3">
+            <div class="py-5">
+                <div class="mb-4 text-primary opacity-25">
+                    <i class="bi bi-map fs-1 d-block" style="font-size: 4rem !important;"></i>
+                </div>
+                <h4 class="fw-bold text-dark">Vista de Distribución</h4>
+                <p class="text-muted mx-auto fw-light" style="max-width: 500px;">
+                    Seleccione una sede y una zona en el panel superior para visualizar el mapa de calor en tiempo real.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // 1. Inicializar Select2 (Buscador en Combobox)
+    $('.select2-enable').select2({
+        theme: 'default', // Usaremos CSS para forzar el estilo Bootstrap
+        width: '100%',
+        language: {
+            noResults: function() { return "No se encontraron resultados"; }
+        }
+    });
+
+    // 2. Lógica de Filtrado Visual en el Mapa
+    const input = document.getElementById('filtroMapa');
+    if(input) {
+        input.addEventListener('keyup', function(e) {
+            const termino = e.target.value.toLowerCase();
+            const tarjetas = document.querySelectorAll('.map-card');
+
+            tarjetas.forEach(card => {
+                const contenido = card.getAttribute('data-search');
+                // Si coincide o si el input está vacío, mostrar
+                if (contenido && contenido.includes(termino)) {
+                    card.parentElement.style.opacity = "1";
+                    card.style.filter = "none";
+                    card.style.transform = "scale(1)";
+                } else {
+                    // Si no coincide, ocultar visualmente (atenuar)
+                    card.parentElement.style.opacity = "0.15";
+                    card.style.filter = "grayscale(100%)";
+                    card.style.transform = "scale(0.95)";
+                }
+            });
+            
+            if (termino === "") {
+                tarjetas.forEach(card => {
+                    card.parentElement.style.opacity = "1";
+                    card.style.filter = "none";
+                    card.style.transform = "scale(1)";
+                });
+            }
+        });
+    }
+});
+</script>
+
+<style>
+    /* Estilos del Mapa */
+    .border-dashed { border: 1.5px dashed #d1e7dd !important; background-color: #f8fff9; }
+    .map-table td { min-width: 150px; height: 130px; vertical-align: middle; padding: 6px; }
+    
+    /* Animación Hover Tarjeta */
+    .map-card {
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border-radius: 6px;
+    }
+    .map-card:hover { 
+        transform: translateY(-3px); 
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important; 
+        border-color: #212529 !important; 
+        z-index: 10; 
+    }
+    
+    /* Scroll horizontal suave */
+    .table-responsive {
+        scrollbar-width: thin;
+        scrollbar-color: #dee2e6 #f8f9fa;
+    }
+
+    /* === PERSONALIZACIÓN SELECT2 PARA QUE PAREZCA BOOTSTRAP === */
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 0.375rem !important;
+        background-color: #f8f9fa !important; /* bg-light */
+        display: flex;
+        align-items: center;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #212529 !important;
+        line-height: 38px !important;
+        padding-left: 12px;
+    }
+    /* Quitar borde azul de enfoque default de select2 */
+    .select2-container--default .select2-selection--single:focus {
+        outline: none;
+    }
+</style>
+{% endblock %}

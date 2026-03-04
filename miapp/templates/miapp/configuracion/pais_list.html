@@ -1,0 +1,52 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">Configuración <i class="bi bi-chevron-right mx-1"></i> Global</div>
+            <h3 class="dash-title">Países</h3>
+        </div>
+        <a href="{% url 'miapp:pais_crear' %}" class="btn-chip btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo País
+        </a>
+    </div>
+
+    <div class="card-soft mb-4 p-3 mt-4">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre o código ISO...">
+            <button type="submit" class="btn btn-light border">Buscar</button>
+        </form>
+    </div>
+
+    <div class="table-card">
+        <table class="table-elegant w-100">
+            <thead>
+                <tr>
+                    <th class="ps-4">NOMBRE</th>
+                    <th class="text-center">CÓDIGO ISO</th>
+                    <th class="text-center">ESTADO</th>
+                    <th class="text-end pe-4">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="ps-4 fw-bold text-dark">{{ item.nombre }}</td>
+                    <td class="text-center font-monospace">{{ item.codigo_iso }}</td>
+                    <td class="text-center">
+                        {% if item.es_activo %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-muted rounded-pill px-3">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'miapp:pais_editar' item.pk %}" class="btn-chip border"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3 mb-4">
+        <div>
+            <div class="text-uppercase text-muted small fw-bold mb-1">Detalle de Marca</div>
+            <h3 class="dash-title">{{ marca.nombre }}</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'miapp:marcas_gestion' %}" class="btn-chip bg-light text-dark border">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'miapp:marca_editar' marca.id %}" class="btn-chip bg-primary-subtle text-primary border-primary-subtle">
+                <i class="bi bi-pencil-square"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="card-soft p-4 mb-4">
+        <div class="row">
+            <div class="col-md-4 border-end">
+                <label class="small text-muted fw-bold">ESTADO OPERATIVO</label>
+                <div class="mt-1">
+                    {% if marca.es_activo %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check-circle me-1"></i> Activa
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="bi bi-x-circle me-1"></i> Inactiva
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-8">
+                <label class="small text-muted fw-bold">DESCRIPCIÓN</label>
+                <p class="mb-0 text-muted">{{ marca.descripcion|default:"No hay descripción registrada para esta marca." }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 text-primary fw-bold">
+            <i class="bi bi-box-seam me-2"></i>Productos Asociados ({{ productos.count }})
+        </h5>
+    </div>
+
+    <div class="table-card">
+        <table class="table-elegant">
+            <thead>
+                <tr>
+                    <th class="ps-4">PRODUCTO</th>
+                    <th>CATEGORÍA</th>
+                    <th>TIPO ALMACENAJE</th>
+                    <th class="text-end">PRECIO</th>
+                    <th class="text-center">STOCK GLOBAL</th>
+                    <th class="text-end pe-4">ACCIÓN</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in productos %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-bold">{{ p.nombre }}</div>
+                        <div class="small text-muted font-monospace">{{ p.codigo_sku|default:"--" }}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ p.categoria.nombre }}</span>
+                    </td>
+                    <td>{{ p.tipo_almacenamiento.descripcion }}</td>
+                    <td class="text-end fw-bold text-dark">${{ p.precio_venta }}</td>
+                    
+                    <td class="text-center">
+                        {% if p.total_stock > 0 %}
+                            <span class="badge bg-success-subtle text-success fw-bold border border-success-subtle">
+                                {{ p.total_stock }} u.
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Agotado</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td class="text-end pe-4">
+                        <a href="{% url 'miapp:producto_detalle' p.id %}" class="btn-icon text-info" title="Ver Ficha del Producto">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi bi-tags fs-1 d-block mb-2 opacity-50"></i>
+                        Esta marca no tiene productos asociados actualmente.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

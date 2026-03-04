@@ -1,0 +1,397 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3 mb-4">
+        <div>
+            <h5 class="dash-subtitle">Catálogo Maestro</h5>
+            <h3 class="dash-title">{{ modo }} Cliente</h3>
+        </div>
+        <a href="{% url 'miapp:clientes_gestion' %}" class="btn-chip" style="background-color: #e9ecef; color: #495057; border: 1px solid #ced4da;">
+            <i class="bi bi-arrow-left me-1"></i> Volver a la Cartera
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card-soft p-4">
+                
+                <form method="post" id="clienteForm" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>{{ form.non_field_errors }}</div>
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6 border-end border-soft pe-md-4">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">
+                                <i class="bi bi-person-vcard me-2"></i>Clasificación e ID
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">Tipo de Cliente <span class="text-danger">*</span></label>
+                                {{ form.tipo_cliente }}
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-6 mb-3">
+                                    <label class="dash-subtitle mb-1">Tipo ID</label>
+                                    {{ form.tipo_identificacion }}
+                                    <div id="err_tipo_identificacion" class="text-danger small mt-1 d-none"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="dash-subtitle mb-1">Número ID</label>
+                                    {{ form.numero_identificacion }}
+                                    <div id="err_numero_identificacion" class="text-danger small mt-1 d-none"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">Nombres <span class="text-danger">*</span></label>
+                                {{ form.nombres }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">Apellidos <span class="text-danger">*</span></label>
+                                {{ form.apellidos }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 ps-md-4">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">
+                                <i class="bi bi-geo-alt me-2"></i>Contacto y Ubicación
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">País</label>
+                                {{ form.pais }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">Correo Electrónico</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                                    {{ form.correo }}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">Teléfono</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                                    {{ form.telefono }}
+                                </div>
+                                <div id="err_telefono" class="text-danger small mt-1 d-none"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="dash-subtitle mb-1">Dirección Domiciliaria</label>
+                                {{ form.direccion }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-soft my-4">
+
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="p-3 rounded" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <label class="fw-bold mb-0 text-dark">Cliente Activo</label>
+                                        <div class="small text-muted">Si se desactiva, no podrá realizar nuevos pedidos.</div>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ form.es_activo }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3 mt-md-0">
+                            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold" style="background-color: var(--accent-blue); border: none;">
+                                <i class="bi bi-check-lg me-2"></i> Guardar Cliente
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('.select2-enable').select2({
+        width: '100%',
+        placeholder: "Seleccionar...",
+        allowClear: true
+    });
+});
+</script>
+
+<script>
+(function () {
+  // ===== Helpers UI =====
+  function showError(idDiv, msg) {
+    const el = document.getElementById(idDiv);
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.toggle("d-none", !msg);
+  }
+
+  function clearError(idDiv) { showError(idDiv, ""); }
+
+  function digitsOnly(str) {
+    return (str || "").replace(/\D/g, "");
+  }
+
+  function enforceDigitsInput(inputEl, maxLen) {
+    if (!inputEl) return;
+
+    // teclado numérico (móvil)
+    inputEl.setAttribute("inputmode", "numeric");
+    inputEl.setAttribute("autocomplete", "off");
+    inputEl.setAttribute("spellcheck", "false");
+    inputEl.setAttribute("pattern", "[0-9]*");
+    if (maxLen) inputEl.setAttribute("maxlength", String(maxLen));
+
+    inputEl.addEventListener("input", function () {
+      let v = digitsOnly(this.value);
+      if (maxLen && v.length > maxLen) v = v.slice(0, maxLen);
+      this.value = v;
+    });
+
+    inputEl.addEventListener("paste", function (e) {
+      const text = (e.clipboardData || window.clipboardData).getData("text");
+      if (/\D/.test(text)) e.preventDefault();
+    });
+  }
+
+  // ===== Validación Ecuador: Cédula / RUC =====
+  function isValidCedulaEC(cedula) {
+    cedula = digitsOnly(cedula);
+    if (cedula.length !== 10) return false;
+
+    const provincia = parseInt(cedula.slice(0, 2), 10);
+    const tercer = parseInt(cedula[2], 10);
+    if (provincia < 1 || provincia > 24) return false;
+    if (tercer >= 6) return false; // cédula natural: tercer dígito 0..5
+
+    const coef = [2,1,2,1,2,1,2,1,2];
+    let total = 0;
+    for (let i = 0; i < 9; i++) {
+      let val = parseInt(cedula[i], 10) * coef[i];
+      if (val >= 10) val -= 9;
+      total += val;
+    }
+    const verificador = (10 - (total % 10)) % 10;
+    return verificador === parseInt(cedula[9], 10);
+  }
+
+  function mod11(numStr, coef) {
+    let total = 0;
+    for (let i = 0; i < coef.length; i++) {
+      total += parseInt(numStr[i], 10) * coef[i];
+    }
+    const rem = total % 11;
+    return rem === 0 ? 0 : 11 - rem;
+  }
+
+  function isValidRucNatural(ruc) {
+    ruc = digitsOnly(ruc);
+    if (ruc.length !== 13) return false;
+    if (!isValidCedulaEC(ruc.slice(0,10))) return false;
+    // sucursal: en práctica suele ser 001; aquí aceptamos distinto de 000
+    return ruc.slice(10,13) !== "000";
+  }
+
+  function isValidRucPublico(ruc) {
+    ruc = digitsOnly(ruc);
+    if (ruc.length !== 13) return false;
+
+    const provincia = parseInt(ruc.slice(0, 2), 10);
+    if (provincia < 1 || provincia > 24) return false;
+    if (ruc[2] !== "6") return false;
+
+    // verificador: posición 9 (índice 8), con primeros 8 dígitos
+    const coef = [3,2,7,6,5,4,3,2];
+    const ver = mod11(ruc.slice(0,8), coef);
+    if (ver === 10) return false;
+    if (ver !== parseInt(ruc[8], 10)) return false;
+
+    return ruc.slice(9,13) !== "0000";
+  }
+
+  function isValidRucJuridico(ruc) {
+    ruc = digitsOnly(ruc);
+    if (ruc.length !== 13) return false;
+
+    const provincia = parseInt(ruc.slice(0, 2), 10);
+    if (provincia < 1 || provincia > 24) return false;
+    if (ruc[2] !== "9") return false;
+
+    // verificador: posición 10 (índice 9), con primeros 9 dígitos
+    const coef = [4,3,2,7,6,5,4,3,2];
+    const ver = mod11(ruc.slice(0,9), coef);
+    if (ver === 10) return false;
+    if (ver !== parseInt(ruc[9], 10)) return false;
+
+    return ruc.slice(10,13) !== "000";
+  }
+
+  function isValidRucEC(ruc) {
+    return isValidRucNatural(ruc) || isValidRucPublico(ruc) || isValidRucJuridico(ruc);
+  }
+
+  // ===== Detectar tipo id desde el select =====
+  // Nota: esto depende de cómo definiste tus opciones. Aquí buscamos texto que contenga "CEDULA" o "RUC".
+  function detectTipoId(selectEl) {
+    if (!selectEl) return "OTRO";
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const raw = ((opt && opt.text) ? opt.text : selectEl.value || "").toUpperCase();
+    if (raw.includes("CED")) return "CEDULA";
+    if (raw.includes("RUC")) return "RUC";
+    return "OTRO";
+  }
+
+  // ===== Hooks de tus campos Django (IDs por defecto) =====
+  const form = document.getElementById("clienteForm");
+  const tipoIdEl = document.getElementById("id_tipo_identificacion");
+  const numeroIdEl = document.getElementById("id_numero_identificacion");
+  const telefonoEl = document.getElementById("id_telefono");
+
+  // 1) bloquear letras y limitar
+  enforceDigitsInput(telefonoEl, 10);      // 10 dígitos móvil EC (si deseas admitir fijo, ajusto abajo)
+  enforceDigitsInput(numeroIdEl, 13);      // hasta 13 (RUC)
+
+  // 2) UX: ajustar maxlength del número ID según tipo
+  function applyMaxLenNumeroId() {
+    const tipo = detectTipoId(tipoIdEl);
+    if (!numeroIdEl) return;
+    if (tipo === "CEDULA") {
+      numeroIdEl.setAttribute("maxlength", "10");
+      if (numeroIdEl.value.length > 10) numeroIdEl.value = numeroIdEl.value.slice(0, 10);
+    } else if (tipo === "RUC") {
+      numeroIdEl.setAttribute("maxlength", "13");
+    } else {
+      // pasaporte u otro: si quieres permitir letras aquí, elimina enforceDigitsInput(numeroIdEl, 13)
+      numeroIdEl.setAttribute("maxlength", "13");
+    }
+  }
+
+  if (tipoIdEl) {
+    tipoIdEl.addEventListener("change", function () {
+      clearError("err_tipo_identificacion");
+      clearError("err_numero_identificacion");
+      applyMaxLenNumeroId();
+      // Revalida en caliente
+      validateNumeroId();
+    });
+  }
+
+  // 3) Validación en tiempo real
+  function validateTelefono() {
+    clearError("err_telefono");
+    if (!telefonoEl) return true;
+
+    const tel = digitsOnly(telefonoEl.value);
+    telefonoEl.value = tel;
+
+    if (!tel) return true; // si no es obligatorio
+    // Si quieres permitir fijo (9 dígitos) cambia a: (tel.length === 9 || tel.length === 10)
+    if (tel.length !== 10) {
+      showError("err_telefono", "El teléfono debe tener 10 dígitos (ej: 0991234567).");
+      return false;
+    }
+    return true;
+  }
+
+  function validateNumeroId() {
+    clearError("err_numero_identificacion");
+    if (!numeroIdEl) return true;
+
+    const tipo = detectTipoId(tipoIdEl);
+    const num = digitsOnly(numeroIdEl.value);
+    numeroIdEl.value = num;
+
+    if (!num) return true; // si no es obligatorio
+
+    if (tipo === "CEDULA") {
+      if (num.length !== 10) {
+        showError("err_numero_identificacion", "La cédula debe tener 10 dígitos.");
+        return false;
+      }
+      if (!isValidCedulaEC(num)) {
+        showError("err_numero_identificacion", "Cédula ecuatoriana inválida.");
+        return false;
+      }
+      return true;
+    }
+
+    if (tipo === "RUC") {
+      if (num.length !== 13) {
+        showError("err_numero_identificacion", "El RUC debe tener 13 dígitos.");
+        return false;
+      }
+      if (!isValidRucEC(num)) {
+        showError("err_numero_identificacion", "RUC ecuatoriano inválido.");
+        return false;
+      }
+      return true;
+    }
+
+    // OTRO (pasaporte, etc.)
+    // Si en tu sistema "OTRO" permite letras, quita enforceDigitsInput(numeroIdEl, 13) arriba.
+    return true;
+  }
+
+  if (telefonoEl) {
+    telefonoEl.addEventListener("blur", validateTelefono);
+    telefonoEl.addEventListener("input", function(){ clearError("err_telefono"); });
+  }
+
+  if (numeroIdEl) {
+    numeroIdEl.addEventListener("blur", validateNumeroId);
+    numeroIdEl.addEventListener("input", function(){ clearError("err_numero_identificacion"); });
+  }
+
+  // 4) Bloquear submit si está mal
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      // aplica ajustes de longitud antes de validar
+      applyMaxLenNumeroId();
+
+      const okTel = validateTelefono();
+      const okId = validateNumeroId();
+
+      if (!okTel || !okId) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // enfoca el primer error
+        if (!okId && numeroIdEl) numeroIdEl.focus();
+        else if (!okTel && telefonoEl) telefonoEl.focus();
+      }
+    });
+  }
+
+  // Inicial
+  applyMaxLenNumeroId();
+})();
+</script>
+
+{% endblock %}

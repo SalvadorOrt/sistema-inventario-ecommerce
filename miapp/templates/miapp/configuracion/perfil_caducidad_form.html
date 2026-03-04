@@ -1,0 +1,146 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card-soft shadow-sm border-0 p-4">
+
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h4 class="mb-0 fw-bold">{{ modo }} Perfil de Caducidad</h4>
+                    <a href="{% url 'miapp:perfiles_caducidad_gestion' %}" class="btn-close"></a>
+                </div>
+
+                <!-- Form -->
+                <form method="post" autocomplete="off" id="perfilForm">
+                    {% csrf_token %}
+
+                    <!-- Código -->
+                    <div class="mb-3">
+                        <label class="dash-subtitle mb-1">Código del Perfil</label>
+                        {{ form.codigo }}
+                        {% if form.codigo.errors %}
+                            <div class="text-danger small">{{ form.codigo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label class="dash-subtitle mb-1">Descripción</label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                            <div class="text-danger small">{{ form.descripcion.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bloqueo / Estrategia -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="dash-subtitle mb-1">Bloqueo (Días)</label>
+                            {{ form.dias_bloqueo_previo }}
+                            {% if form.dias_bloqueo_previo.errors %}
+                                <div class="text-danger small">{{ form.dias_bloqueo_previo.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <label class="dash-subtitle mb-1">Estrategia</label>
+                            {{ form.estrategia_requerida }}
+                            {% if form.estrategia_requerida.errors %}
+                                <div class="text-danger small">{{ form.estrategia_requerida.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Switch: Requiere Caducidad -->
+                    <div class="mb-3 p-3 bg-light rounded border" id="container_caducidad">
+                        <div class="switch-row">
+                            {{ form.requiere_caducidad }}
+                            <label class="switch-label fw-bold" for="{{ form.requiere_caducidad.id_for_label }}">
+                                Controlar fechas de vencimiento
+                            </label>
+                        </div>
+                        {% if form.requiere_caducidad.errors %}
+                            <div class="text-danger small mt-1">{{ form.requiere_caducidad.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Switch: Activo -->
+                    <div class="mb-4 p-3 bg-light rounded border">
+                        <div class="switch-row">
+                            {{ form.es_activo }}
+                            <label class="switch-label fw-bold" for="{{ form.es_activo.id_for_label }}">
+                                Perfil habilitado
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold">
+                            <i class="bi bi-save me-2"></i> Guardar Perfil
+                        </button>
+                        <a href="{% url 'miapp:perfiles_caducidad_gestion' %}" class="btn btn-link text-muted text-decoration-none">
+                            Cancelar
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const estrategiaSelect = document.querySelector('[name="estrategia_requerida"]');
+    const requiereCadCheck = document.querySelector('[name="requiere_caducidad"]');
+    const diasInput = document.querySelector('[name="dias_bloqueo_previo"]');
+
+    function toggleFields() {
+        if (estrategiaSelect.value === 'FIFO') {
+            requiereCadCheck.checked = false;
+            requiereCadCheck.disabled = true;
+            diasInput.value = 0;
+            diasInput.readOnly = true;
+            diasInput.classList.add('bg-secondary-subtle');
+        } else {
+            requiereCadCheck.disabled = false;
+            diasInput.readOnly = false;
+            diasInput.classList.remove('bg-secondary-subtle');
+        }
+    }
+
+    estrategiaSelect.addEventListener("change", toggleFields);
+    toggleFields();
+});
+</script>
+
+<!-- CSS -->
+<style>
+/* Switch alignment */
+.switch-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-height: 2rem;
+}
+
+.switch-row .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    margin: 0;
+    float: none;
+    vertical-align: middle;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.switch-label {
+    margin: 0;
+    line-height: 1.2;
+    cursor: pointer;
+}
+</style>
+
+{% endblock %}

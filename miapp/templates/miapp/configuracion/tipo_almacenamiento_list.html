@@ -1,0 +1,107 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">
+                <span class="text-muted">Configuración</span>
+                <i class="bi bi-chevron-right mx-1"></i> Logística
+            </div>
+            <h3 class="dash-title">Tipos de Almacenamiento</h3>
+        </div>
+        <a href="{% url 'miapp:tipo_almacenamiento_crear' %}" class="btn-chip btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo Tipo
+        </a>
+    </div>
+
+    <div class="card-soft mb-4 p-3">
+        <form method="get" class="d-flex gap-3 align-items-center">
+            <div class="flex-grow-1 position-relative">
+                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" name="q" value="{{ q }}" class="form-control ps-5" placeholder="Buscar por código (ej: FRIO)...">
+            </div>
+            <select name="estado" class="form-select" style="width: 180px;" onchange="this.form.submit()">
+                <option value="todos">Todos los estados</option>
+                <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+                <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table-elegant w-100">
+                <thead>
+                    <tr>
+                        <th class="ps-4">CÓDIGO</th>
+                        <th>DESCRIPCIÓN</th>
+                        <th class="text-center">USO ACTUAL</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-end pe-4">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-light text-dark border fw-bold font-monospace">
+                                    {{ item.codigo }}
+                                </span>
+                            </td>
+                            
+                            <td>
+                                {{ item.descripcion }}
+                            </td>
+                            
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    {% if item.num_zonas > 0 %}
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" title="Zonas activas">
+                                            <i class="bi bi-grid-fill me-1"></i>{{ item.num_zonas }} Zonas
+                                        </span>
+                                    {% endif %}
+                                    {% if item.num_productos > 0 %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Productos activos">
+                                            <i class="bi bi-box-seam-fill me-1"></i>{{ item.num_productos }} Prods
+                                        </span>
+                                    {% endif %}
+                                    {% if item.num_zonas == 0 and item.num_productos == 0 %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <td class="text-center">
+                                {% if item.es_activo %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-muted rounded-pill px-3">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end pe-4">
+                                <a href="{% url 'miapp:tipo_almacenamiento_editar' item.pk %}" class="btn-chip border" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-snow fs-1 d-block mb-2 opacity-25"></i>
+                                No hay tipos de almacenamiento registrados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

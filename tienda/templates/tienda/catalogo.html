@@ -1,0 +1,429 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  /* =========================================
+     ESTILOS GENERALES Y TIPOGRAFÍA
+     ========================================= */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  
+  :root {
+    --neutral-900: #111111;
+    --neutral-500: #737373;
+    --neutral-200: #e5e5e5;
+    --neutral-100: #f5f5f5;
+    --font-sans: "Inter", sans-serif;
+    --color-gold: #fbbf24;
+    --color-danger: #ef4444;
+    --color-success: #22c55e;
+  }
+
+  /* LAYOUT PRINCIPAL */
+  .catalog-wrapper {
+    font-family: var(--font-sans);
+    width: 100%;
+    margin: 0 auto;
+    padding: 30px 40px;
+    display: grid;
+    /* Columna Fija (260px) | Contenido Flexible */
+    grid-template-columns: 260px 1fr; 
+    gap: 50px;
+    align-items: start;
+  }
+
+  /* =========================================
+     SIDEBAR DE FILTROS (IZQUIERDA)
+     ========================================= */
+  .filters-sidebar {
+    position: sticky;
+    top: 100px; /* Ajusta según la altura de tu navbar */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding-right: 15px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--neutral-200) transparent;
+  }
+
+  /* TÍTULOS DE SECCIÓN */
+  .filter-section-title {
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      margin: 25px 0 10px 0;
+      border-bottom: 2px solid #000;
+      padding-bottom: 5px;
+      color: #000;
+  }
+
+  /* ACORDEONES (DETAILS/SUMMARY) */
+  details.filter-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--neutral-100);
+  }
+  
+  summary.filter-label {
+    list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.75rem; font-weight: 800; cursor: pointer;
+    margin-bottom: 10px; user-select: none;
+  }
+  summary.filter-label::after { content: '+'; font-size: 1.1rem; }
+  details[open] summary.filter-label::after { content: '-'; }
+
+  /* CAJA CON SCROLL INTERNO (Para listas largas) */
+  .filter-scroll-box {
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 5px;
+  }
+
+  /* CHECKBOXES & SELECCIÓN */
+  .filter-checkbox {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--neutral-500);
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: all 0.2s;
+  }
+  
+  .filter-checkbox:hover { background: var(--neutral-100); color: var(--neutral-900); }
+  
+  /* ESTADO SELECCIONADO (ALTO CONTRASTE) */
+  .filter-checkbox.selected {
+      background: var(--neutral-900);
+      color: #fff !important;
+      font-weight: 600;
+  }
+  .filter-checkbox.selected .count-badge { color: #ccc; }
+  .filter-checkbox input { display: none; } /* Ocultar el input nativo */
+  
+  .count-badge { font-size: 0.7rem; color: #bbb; }
+  
+  /* INPUTS DE PRECIO Y BÚSQUEDA INTERNA */
+  .input-minimal {
+    width: 100%; padding: 8px; border: 1px solid #ddd;
+    font-size: 0.8rem; border-radius: 4px; outline: none;
+  }
+
+  /* =========================================
+     GRID DE PRODUCTOS (DERECHA)
+     ========================================= */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 40px 25px;
+  }
+
+  .product-item { position: relative; }
+  
+  .product-image-wrapper {
+    aspect-ratio: 1 / 1;
+    background: var(--neutral-100);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 15px; border-radius: 4px;
+    position: relative; /* Para posicionar el badge */
+  }
+  .product-image-wrapper img {
+    width: 80%; height: 80%; object-fit: contain;
+    mix-blend-mode: multiply; transition: transform 0.4s;
+  }
+  .product-item:hover img { transform: scale(1.08); }
+  
+  /* ETIQUETA TOP VENTAS */
+  .badge-bestseller {
+    position: absolute; top: 10px; left: 10px;
+    background: #000; color: #fff;
+    font-size: 0.6rem; font-weight: 800;
+    padding: 4px 8px; border-radius: 2px;
+    letter-spacing: 0.05em; z-index: 10;
+  }
+
+  .product-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+
+  -webkit-line-clamp: 2;
+  line-clamp: 2;          /* <-- para el linter */
+
+  overflow: hidden;
+
+  line-height: 1.2;
+  max-height: 2.4em;
+}
+
+  
+  .product-price { font-weight: 500; font-size: 0.95rem; margin-top: 5px; }
+
+  /* BOTÓN AÑADIR */
+  .btn-add-ghost {
+    width: 100%; padding: 10px; margin-top: 15px;
+    background: transparent; border: 1px solid var(--neutral-200);
+    font-weight: 700; font-size: 0.7rem; cursor: pointer; text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .btn-add-ghost:hover { background: #000; color: #fff; border-color: #000; }
+  .btn-add-ghost.added { background: #000; color: #fff; border-color: #000; }
+
+  /* MÓVIL */
+  .mobile-trigger { display: none; }
+  @media (max-width: 900px) {
+    .catalog-wrapper { display: block; padding: 20px; }
+    .filters-sidebar { display: none; }
+    .mobile-trigger { display: flex; width: 100%; padding: 15px; justify-content: space-between; border: 1px solid #ddd; margin-bottom: 20px; background: #fff; font-weight: 700; }
+  }
+</style>
+
+<div class="catalog-wrapper">
+
+  <aside class="filters-sidebar d-none d-lg-block">
+    <form id="filterForm" method="GET" action="{% url 'tienda:catalogo' %}">
+        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <span style="font-weight: 800; font-size: 0.9rem;">FILTROS</span>
+            <a href="{% url 'tienda:catalogo' %}" style="font-size: 0.7rem; text-decoration: underline; color: #999;">Limpiar</a>
+        </div>
+
+        <div class="filter-section-title">PRODUCTO</div>
+
+        <details class="filter-group" open>
+            <summary class="filter-label">Categoría</summary>
+            <input type="text" id="searchCat" class="input-minimal" placeholder="Filtrar..." 
+                   style="margin-bottom:8px; border:none; border-bottom:1px solid #ddd;" 
+                   onkeyup="filtrarLista('searchCat', 'categoriesList', 'category-item')">
+            
+            <div id="categoriesList" class="filter-scroll-box">
+                {% for cat in categorias %}
+                <label class="filter-checkbox category-item {% if cat.id|stringformat:'s' in request.GET.getlist.categoria %}selected{% endif %}">
+                    <input type="checkbox" name="categoria" value="{{ cat.id }}" class="auto-submit"
+                           {% if cat.id|stringformat:'s' in request.GET.getlist.categoria %}checked{% endif %}>
+                    <span class="item-text">{{ cat.nombre }}</span>
+                    <span class="count-badge">{{ cat.total_productos }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </details>
+
+        <details class="filter-group">
+            <summary class="filter-label">Marca</summary>
+            <input type="text" id="searchBrand" class="input-minimal" placeholder="Buscar..." 
+                   style="margin-bottom:8px; border:none; border-bottom:1px solid #ddd;" 
+                   onkeyup="filtrarLista('searchBrand', 'brandsList', 'brand-item')">
+            
+            <div id="brandsList" class="filter-scroll-box">
+                {% for m in marcas %}
+                <label class="filter-checkbox brand-item {% if m.id|stringformat:'s' in request.GET.getlist.marca %}selected{% endif %}">
+                    <input type="checkbox" name="marca" value="{{ m.id }}" class="auto-submit"
+                           {% if m.id|stringformat:'s' in request.GET.getlist.marca %}checked{% endif %}>
+                    <span class="item-text">{{ m.nombre }}</span>
+                    <span class="count-badge">{{ m.total_productos }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </details>
+
+        <div class="filter-section-title">MERCADO</div>
+        
+        <label class="filter-checkbox {% if request.GET.tendencia == 'bestseller' %}selected{% endif %}" style="margin-bottom: 20px;">
+            <input type="checkbox" name="tendencia" value="bestseller" class="auto-submit" 
+                   {% if request.GET.tendencia == 'bestseller' %}checked{% endif %}>
+            <span style="font-weight:700;">Lo más vendido</span>
+        </label>
+
+        <div class="filter-section-title">COMPRA</div>
+
+        <details class="filter-group" open>
+            <summary class="filter-label">Precio & Stock</summary>
+            
+            <label class="filter-checkbox {% if request.GET.stock %}selected{% endif %}" style="margin-bottom:15px;">
+                <input type="checkbox" name="stock" value="1" class="auto-submit" {% if request.GET.stock %}checked{% endif %}>
+                <span>Solo en Stock</span>
+                <span class="material-icons-round" style="font-size:16px;">inventory_2</span>
+            </label>
+            
+            <div style="display:flex; gap:5px;">
+                <input type="number" name="min" class="input-minimal" placeholder="$ Min" 
+                       value="{{ request.GET.min }}" step="0.01" min="0">
+                <input type="number" name="max" class="input-minimal" placeholder="$ Max" 
+                       value="{{ request.GET.max }}" step="0.01" min="0">
+                <button style="background:#000; color:#fff; border:none; width:30px; border-radius:4px; cursor:pointer;">></button>
+            </div>
+        </details>
+
+        <div class="filter-section-title">LOGÍSTICA</div>
+        <details class="filter-group">
+            <summary class="filter-label">Almacenaje</summary>
+            <div class="filter-scroll-box">
+                {% for tipo in tipos_almacenamiento %}
+                <label class="filter-checkbox {% if tipo.id|stringformat:'s' in request.GET.getlist.almacenamiento %}selected{% endif %}">
+                    <input type="checkbox" name="almacenamiento" value="{{ tipo.id }}" class="auto-submit"
+                           {% if tipo.id|stringformat:'s' in request.GET.getlist.almacenamiento %}checked{% endif %}>
+                    <span class="item-text">{{ tipo.descripcion }}</span>
+                    <span class="count-badge">{{ tipo.total_productos }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </details>
+
+    </form>
+  </aside>
+
+  <main class="results-container">
+    
+    <button class="mobile-trigger d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMobile">
+        FILTRAR RESULTADOS <span class="material-icons-round">tune</span>
+    </button>
+
+    <div class="d-none d-lg-flex" style="justify-content:space-between; margin-bottom:25px; align-items:center;">
+        <h1 style="font-size: 1.4rem; font-weight: 800; margin:0;">Explorar Catálogo</h1>
+        
+        <div style="display:flex; gap:15px; align-items:center;">
+            <select onchange="location = this.value;" class="input-minimal" style="width:auto; border-color:#000; font-weight:600; cursor:pointer;">
+                <option value="?{% for k,v in request.GET.items %}{% if k != 'orden' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden=reciente" {% if not request.GET.orden %}selected{% endif %}>Más Recientes</option>
+                <option value="?{% for k,v in request.GET.items %}{% if k != 'orden' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden=ventas_desc" {% if request.GET.orden == 'ventas_desc' %}selected{% endif %}>Más Vendidos</option>
+                <option value="?{% for k,v in request.GET.items %}{% if k != 'orden' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden=precio_asc" {% if request.GET.orden == 'precio_asc' %}selected{% endif %}>Precio: Bajo a Alto</option>
+                <option value="?{% for k,v in request.GET.items %}{% if k != 'orden' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden=precio_desc" {% if request.GET.orden == 'precio_desc' %}selected{% endif %}>Precio: Alto a Bajo</option>
+            </select>
+            <span style="font-size: 0.8rem; color: #777;">{{ productos.count }} items</span>
+        </div>
+    </div>
+
+    {% if productos %}
+      <div class="gallery-grid">
+        {% for prod in productos %}
+          <div class="product-item">
+            <div class="product-image-wrapper">
+              
+              {% if prod.total_ventas > 5 %}
+                <span class="badge-bestseller">TOP VENTAS</span>
+              {% endif %}
+
+              <a href="{% url 'tienda:producto_detalle' prod.id %}">
+                {% with foto=prod.imagenes.first %}
+                  <img src="{% if foto and foto.imagen %}{{ foto.imagen.url }}{% else %}{% static 'img/no-image.png' %}{% endif %}" alt="{{ prod.nombre }}">
+                {% endwith %}
+              </a>
+            </div>
+            
+            <div class="product-info">
+              <h3 class="product-name">{{ prod.nombre }}</h3>
+              <div class="product-price">${{ prod.precio_venta }}</div>
+              
+              <button type="button" class="btn-add-ghost" onclick="addToCart('{{ prod.id }}', this)">
+                  Añadir
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center; padding: 100px 0; color:#777; border-top:1px solid #eee;">
+        <p>No hay resultados con estos filtros.</p>
+        <a href="{% url 'tienda:catalogo' %}" style="text-decoration:underline; color:#000;">Limpiar filtros</a>
+      </div>
+    {% endif %}
+  </main>
+</div>
+
+<div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasMobile" style="height: 85vh;">
+  <div class="offcanvas-header"><h5 class="offcanvas-title fw-bold">FILTROS</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div>
+  <div class="offcanvas-body">
+      <form method="GET" action="{% url 'tienda:catalogo' %}">
+        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+        <p class="text-muted">Usa la versión de escritorio para filtros avanzados.</p>
+        <button style="width:100%; padding:15px; background:#000; color:#fff; border:none; font-weight:bold;">VER RESULTADOS</button>
+      </form>
+  </div>
+</div>
+
+<script>
+    // 1. Buscador interno
+    function filtrarLista(inputId, listId, itemClass) {
+        var input = document.getElementById(inputId);
+        var filter = input.value.toUpperCase();
+        var list = document.getElementById(listId);
+        var items = list.getElementsByClassName(itemClass);
+
+        for (var i = 0; i < items.length; i++) {
+            var span = items[i].getElementsByClassName("item-text")[0]; 
+            if (span.textContent.toUpperCase().indexOf(filter) > -1) {
+                items[i].style.display = "flex";
+            } else {
+                items[i].style.display = "none";
+            }
+        }
+    }
+
+    // 2. Auto-Submit
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("filterForm");
+        document.querySelectorAll(".auto-submit").forEach(input => {
+            input.addEventListener("change", function() {
+                document.querySelector('.catalog-wrapper').style.opacity = '0.5';
+                form.submit();
+            });
+        });
+    });
+
+    // 3. Añadir al Carrito (AJAX MEJORADO)
+    function addToCart(pid, btn) {
+        var txt = btn.innerText;
+        btn.innerText = "..."; 
+        btn.disabled = true;
+        
+        fetch(`/online/agregar/${pid}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}', 
+                'X-Requested-With': 'XMLHttpRequest', 
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'cantidad=1'
+        })
+        .then(r => { 
+            if(r.status===401) {
+                window.location.href="{% url 'tienda:login' %}"; 
+                return;
+            }
+            return r.json(); 
+        })
+        .then(d => {
+             if(d && d.status==='success') {
+                 btn.innerText = "LISTO"; 
+                 btn.classList.add('added');
+                 
+                 // Actualizar contadores globales
+                 document.querySelectorAll('.cart-count').forEach(el => {
+                     el.innerText = d.cart_total;
+                     el.style.transform = 'scale(1.2)';
+                     setTimeout(() => el.style.transform = 'scale(1)', 200);
+                 });
+
+                 setTimeout(() => { 
+                    btn.innerText = txt; 
+                    btn.classList.remove('added'); 
+                    btn.disabled=false; 
+                 }, 2000);
+             } else { 
+                 alert(d.error || 'Error'); 
+                 btn.innerText = txt; 
+                 btn.disabled=false; 
+             }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.innerText = txt;
+            btn.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

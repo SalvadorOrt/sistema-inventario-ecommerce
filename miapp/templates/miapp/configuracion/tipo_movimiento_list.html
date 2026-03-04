@@ -1,0 +1,68 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    <div class="dash-header mt-3">
+        <div>
+            <div class="text-muted small mb-1">Configuración <i class="bi bi-chevron-right mx-1"></i> Auditoría</div>
+            <h3 class="dash-title">Tipos de Movimiento</h3>
+        </div>
+        <a href="{% url 'miapp:tipo_movimiento_crear' %}" class="btn-chip btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo Tipo
+        </a>
+    </div>
+
+    <div class="table-card mt-4">
+        <table class="table-elegant w-100">
+            <thead>
+                <tr>
+                    <th class="ps-4">CÓDIGO / NATURALEZA</th>
+                    <th class="text-center">AFECTA STOCK</th>
+                    <th class="text-center">REQUISITOS</th>
+                    <th class="text-center">ESTADO</th>
+                    <th class="text-end pe-4">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-bold">{{ item.codigo }}</div>
+                        {% if item.es_entrada %}
+                            <span class="badge bg-success-subtle text-success small">Entrada (+)</span>
+                        {% elif item.es_salida %}
+                            <span class="badge bg-danger-subtle text-danger small">Salida (-)</span>
+                        {% else %}
+                            <span class="badge bg-light text-muted small">Neutro</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if item.afecta_stock %}
+                            <i class="bi bi-database-check text-primary fs-5"></i>
+                        {% else %}
+                            <i class="bi bi-database-dash text-muted fs-5"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-1">
+                            {% if item.requiere_pedido %}
+                                <span class="badge border text-dark" title="Requiere Pedido">PED</span>
+                            {% endif %}
+                            {% if item.requiere_motivo_detallado %}
+                                <span class="badge border text-dark" title="Requiere Motivo">MOT</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        {% if item.es_activo %}<span class="badge bg-success-subtle text-success rounded-pill px-3">Activo</span>
+                        {% else %}<span class="badge bg-secondary-subtle text-muted rounded-pill px-3">Inactivo</span>{% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'miapp:tipo_movimiento_editar' item.pk %}" class="btn-chip border"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

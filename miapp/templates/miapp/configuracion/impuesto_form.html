@@ -1,0 +1,83 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'miapp/css/app.css' %}">
+
+<div class="dash-wrap">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card-soft shadow-sm border-0 p-4">
+                
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h4 class="mb-0 fw-bold">{{ modo }} Impuesto</h4>
+                    <a href="{% url 'miapp:impuestos_gestion' %}" class="btn-close" title="Cancelar"></a>
+                </div>
+
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="dash-subtitle mb-1">Nombre del Impuesto</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger small mt-1">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="dash-subtitle mb-1">Porcentaje / Tarifa</label>
+                        <div class="input-group">
+                            {{ form.porcentaje }}
+                            <span class="input-group-text bg-light text-muted fw-bold">%</span>
+                        </div>
+                        <div class="form-text small text-muted mt-1">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Ingrese el valor decimal. Ejemplo: Para 15%, escriba <strong>15.00</strong>.
+                        </div>
+                        {% if form.porcentaje.errors %}
+                            <div class="text-danger small mt-1">{{ form.porcentaje.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4 bg-light p-3 rounded border">
+                        <div class="form-check form-switch d-flex align-items-center ps-0 m-0">
+                            <div class="me-3 position-relative" style="height: 1.5em;">
+                                {{ form.es_activo }}
+                            </div>
+                            <label class="form-check-label fw-bold cursor-pointer m-0" for="{{ form.es_activo.id_for_label }}" style="line-height: 1.5em;">
+                                Habilitado para uso
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary shadow-sm py-2 fw-bold">
+                            <i class="bi bi-save me-2"></i> Guardar Impuesto
+                        </button>
+                        <a href="{% url 'miapp:impuestos_gestion' %}" class="btn btn-link text-muted text-decoration-none btn-sm">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* AJUSTE FINO DEL SWITCH */
+    .form-switch .form-check-input {
+        width: 3em;          /* Un poco más ancho para mejor visualización */
+        height: 1.5em;       /* Altura estándar */
+        margin-top: 0;       /* Elimina margen superior default de Bootstrap */
+        margin-left: 0;      /* Elimina margen izquierdo default */
+        cursor: pointer;
+        float: none;         /* Evita flotados extraños */
+        vertical-align: middle; /* Alineación vertical base */
+    }
+    
+    /* Asegurar que el label sea clickeable y alineado */
+    .cursor-pointer { cursor: pointer; }
+</style>
+{% endblock %}

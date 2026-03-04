@@ -1,0 +1,150 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dash-wrap pb-5">
+    <div class="dash-header mt-3 d-print-none border-bottom pb-3">
+        <div>
+            <div class="text-muted small mb-1 text-uppercase ls-1">Consultas <i class="bi bi-chevron-right mx-1"></i> Comercial</div>
+            <h3 class="dash-title fw-bold text-dark">Pedidos Realizados</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="?{{ request.GET.urlencode }}&export=1" class="btn btn-success btn-sm shadow-sm px-3">
+                <i class="bi bi-file-earmark-excel me-1"></i>Reporte Financiero
+            </a>
+        </div>
+    </div>
+
+    <div class="row mt-4 g-3 d-print-none">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 border-start border-primary border-4 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="icon-circle bg-primary-subtle text-primary me-3">
+                        <i class="bi bi-cash-stack fs-4"></i>
+                    </div>
+                    <div>
+                        <label class="text-muted small fw-bold text-uppercase mb-0">Ventas Totales</label>
+                        <h4 class="fw-bold mb-0 text-dark">${{ kpis.total_ventas|default:"0.00"|floatformat:2 }}</h4>
+                        <small class="text-muted extra-small">{{ kpis.conteo }} pedidos filtrados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 border-start border-success border-4 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="icon-circle bg-success-subtle text-success me-3">
+                        <i class="bi bi-graph-up-arrow fs-4"></i>
+                    </div>
+                    <div>
+                        <label class="text-muted small fw-bold text-uppercase mb-0">Utilidad Neta</label>
+                        <h4 class="fw-bold mb-0 text-dark">${{ kpis.total_ganancia|default:"0.00"|floatformat:2 }}</h4>
+                        <small class="text-success fw-bold extra-small">Margen Global: {{ margen_global|floatformat:1 }}%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 border-start border-warning border-4 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="icon-circle bg-warning-subtle text-warning me-3">
+                        <i class="bi bi-basket fs-4"></i>
+                    </div>
+                    <div>
+                        <label class="text-muted small fw-bold text-uppercase mb-0">Ticket Promedio</label>
+                        <h4 class="fw-bold mb-0 text-dark">
+                            {% widthratio kpis.total_ventas kpis.conteo 1 %} <span class="fs-6 text-muted fw-normal">/ pedido</span>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4 d-print-none mb-4 overflow-hidden rounded-3">
+        <div class="card-body bg-light-subtle p-3">
+            <form method="get" class="row g-2">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm border rounded bg-white">
+                        <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" value="{{ filtros.q }}" class="form-control border-0" placeholder="Buscar por Cliente, Código o CI...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="estado" class="form-select form-select-sm border-light-subtle">
+                        <option value="">Estado: Todos</option>
+                        {% for est in estados %}<option value="{{ est.id }}" {% if filtros.estado_id == est.id|stringformat:"s" %}selected{% endif %}>{{ est.descripcion }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="desde" value="{{ filtros.desde }}" class="form-control form-control-sm border-light-subtle">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="hasta" value="{{ filtros.hasta }}" class="form-control form-control-sm border-light-subtle">
+                </div>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold">FILTRAR</button>
+                    <a href="{% url 'miapp:pedidos_consulta' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm overflow-hidden rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-dark text-white shadow-sm">
+                    <tr class="small text-uppercase ls-1">
+                        <th class="ps-4 py-3 border-0">Pedido</th>
+                        <th class="border-0">Cliente</th>
+                        <th class="border-0">Estado</th>
+                        <th class="text-end border-0">Total Venta</th>
+                        <th class="text-end border-0 text-success-emphasis bg-success-subtle">Utilidad</th>
+                        <th class="text-center border-0 d-print-none pe-3">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    {% for p in pedidos %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ p.codigo }}</div>
+                            <div class="extra-small text-muted">{{ p.fecha_creacion|date:"d M Y, H:i" }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark small">{{ p.cliente.nombres }} {{ p.cliente.apellidos }}</div>
+                            <div class="extra-small text-muted"><i class="bi bi-person-vcard me-1"></i>{{ p.cliente.numero_identificacion }}</div>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill px-3 border 
+                                {% if p.estado_pedido.codigo == 'SOLICITUD' %}bg-warning-subtle text-warning border-warning
+                                {% elif p.estado_pedido.codigo == 'LISTO_PARA_DESPACHO' %}bg-info-subtle text-info border-info
+                                {% elif p.estado_pedido.codigo == 'DESPACHADO' %}bg-success-subtle text-success border-success
+                                {% else %}bg-light text-secondary{% endif %}">
+                                {{ p.estado_pedido.descripcion }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="fw-bold text-dark">${{ p.total|floatformat:2 }}</div>
+                        </td>
+                        <td class="text-end bg-success-subtle text-success-emphasis fw-bold">
+                            + ${{ p.ganancia_total|floatformat:2 }}
+                        </td>
+                        <td class="text-center d-print-none pe-3">
+                            <a href="{% url 'miapp:pedido_detalle' p.pk %}" class="btn btn-outline-light btn-sm border-light-subtle rounded-circle text-primary hover-audit">
+                                <i class="bi bi-eye small"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted small">No hay pedidos registrados en este periodo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<style>
+    .icon-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .bg-success-subtle { background-color: #f1fcf5 !important; }
+</style>
+{% endblock %}

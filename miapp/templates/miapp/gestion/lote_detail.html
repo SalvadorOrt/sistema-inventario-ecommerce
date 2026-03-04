@@ -1,0 +1,240 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-4 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{% url 'miapp:inventario_global_consulta' %}" class="text-decoration-none text-muted small hover-dark">
+                    <i class="bi bi-arrow-left"></i> Volver al inventario
+                </a>
+            </div>
+            <h3 class="dash-title fw-bold text-dark">
+                Lote: <span class="font-monospace text-primary">{{ lote.lote }}</span>
+            </h3>
+        </div>
+    </div>
+
+    <div class="card-soft mb-4 p-4 bg-white rounded-4 shadow-sm border-0">
+        <div class="row g-4">
+            
+            <div class="col-md-5 border-end border-light">
+                <label class="dash-subtitle mb-3 text-muted small fw-bold text-uppercase ls-1">Producto</label>
+                
+                <div class="d-flex align-items-start gap-4"> <div style="width: 200px; height: 200px; min-width: 120px; border-radius: 16px; background:#f8f9fa; border: 1px solid #eaecf0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        {% with imagen_principal=lote.producto.imagenes.first %}
+                            {% if imagen_principal and imagen_principal.imagen %}
+                                <img src="{{ imagen_principal.imagen.url }}" alt="{{ lote.producto.nombre }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <i class="bi bi-box-seam fs-1 text-muted opacity-25"></i> {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <div class="pt-1">
+                        <div class="fw-bold text-dark fs-4 lh-sm">{{ lote.producto.nombre }}</div>
+                        <div class="text-primary font-monospace mt-2 mb-2"><i class="bi bi-upc-scan me-1"></i>{{ lote.producto.codigo_sku }}</div>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-white text-dark border shadow-sm fw-normal px-2 py-1">{{ lote.producto.categoria.nombre }}</span>
+                            <span class="badge bg-white text-dark border shadow-sm fw-normal px-2 py-1">{{ lote.producto.marca.nombre }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 border-end border-light ps-md-4">
+                <label class="dash-subtitle mb-3 text-muted small fw-bold text-uppercase ls-1">Ubicación Física</label>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <span class="d-block text-muted extra-small text-uppercase">Sede / Bodega</span>
+                        <span class="fw-bold text-dark">
+                            <i class="bi bi-building me-1 text-muted"></i>{{ lote.ubicacion.rack.zona.bodega.nombre }}
+                        </span>
+                    </div>
+                    
+                    <div class="col-6">
+                        <span class="d-block text-muted extra-small text-uppercase">Zona</span>
+                        <span class="fw-bold text-dark">{{ lote.ubicacion.rack.zona.nombre }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="d-block text-muted extra-small text-uppercase">Rack</span>
+                        <span class="fw-bold text-dark">{{ lote.ubicacion.rack.codigo }}</span>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="p-2 rounded bg-light border border-light d-flex justify-content-between align-items-center">
+                            <span class="text-muted small"><i class="bi bi-geo-alt me-1"></i>Posición Exacta:</span>
+                            <span class="fw-bold text-primary font-monospace">{{ lote.ubicacion.codigo_celda }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center justify-content-between border-top pt-3">
+                    <span class="text-muted small fw-bold text-uppercase">Estado:</span>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if lote.estado_lote.es_vendible %}
+                            <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-1">
+                                {{ lote.estado_lote.codigo }}
+                            </span>
+                        {% else %}
+                            <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-1">
+                                {{ lote.estado_lote.codigo }}
+                            </span>
+                        {% endif %}
+
+                        {% if user.is_staff %}
+                            <button type="button" class="btn btn-link p-0 text-muted" data-bs-toggle="modal" data-bs-target="#modalCambiarEstado" title="Cambiar Estado">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 ps-md-4">
+                <label class="dash-subtitle mb-2 text-muted small fw-bold text-uppercase ls-1">Datos Clave</label>
+                
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Stock Actual:</span>
+                    <span class="fw-bold text-dark fs-5">{{ lote.cantidad_disponible }} <span class="fs-6 fw-normal text-muted">un.</span></span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Costo Unit.:</span>
+                    <span class="fw-bold text-dark">${{ lote.costo_compra_lote }}</span>
+                </div>
+
+                <hr class="my-2 border-light">
+
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Entrada:</span>
+                    <span class="fw-bold text-dark">{{ lote.fecha_entrada|date:"d/m/Y" }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Vencimiento:</span>
+                    {% if lote.fecha_caducidad %}
+                        <span class="fw-bold {% if lote.fecha_caducidad < hoy %}text-danger{% else %}text-dark{% endif %}">
+                            {{ lote.fecha_caducidad|date:"d/m/Y" }}
+                        </span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card bg-white rounded-4 shadow-sm overflow-hidden">
+        <div class="card-header-compact px-4 py-3 border-bottom bg-white">
+            <div class="h-title fw-bold text-dark">Historial de Movimientos (Trazabilidad)</div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-elegant table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3">Fecha / Hora</th>
+                        <th>Tipo</th>
+                        <th>Documento / Motivo</th>
+                        <th>Usuario</th>
+                        <th class="text-center">Entrada</th>
+                        <th class="text-center">Salida</th>
+                        <th class="text-end pe-4">Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mov in movimientos %}
+                        <tr class="border-bottom border-light">
+                            <td class="ps-4 py-3">
+                                <div class="d-flex flex-column">
+                                    <span class="text-dark small fw-bold">{{ mov.fecha|date:"d M Y" }}</span>
+                                    <span class="text-muted extra-small">{{ mov.fecha|date:"H:i:s" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-normal extra-small">{{ mov.tipo_movimiento.codigo }}</span>
+                            </td>
+                            <td>
+                                <div class="text-dark small text-truncate" style="max-width: 250px;" title="{{ mov.motivo }}">
+                                    {{ mov.motivo|default:"-" }}
+                                </div>
+                                {% if mov.codigo %}
+                                    <div class="text-primary extra-small font-monospace">{{ mov.codigo }}</div>
+                                {% endif %}
+                            </td>
+                            <td><span class="small text-muted">{{ mov.usuario.username|title }}</span></td>
+                            <td class="text-center">
+                                {% if mov.tipo_movimiento.es_entrada %}
+                                    <span class="text-success fw-bold small">+{{ mov.cantidad }}</span>
+                                {% else %}<span class="text-muted extra-small">-</span>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if mov.tipo_movimiento.es_salida %}
+                                    <span class="text-danger fw-bold small">-{{ mov.cantidad }}</span>
+                                {% else %}<span class="text-muted extra-small">-</span>{% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <span class="fw-bold text-dark">{{ mov.stock_despues }}</span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center py-5 muted">Sin movimientos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCambiarEstado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Administrar Estado del Lote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'miapp:lote_cambiar_estado' lote.id %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-light border border-warning text-dark small mb-3">
+                        <i class="bi bi-exclamation-circle me-1 text-warning"></i>
+                        Cambiar el estado afectará la disponibilidad de venta de las <b>{{ lote.cantidad_disponible }} unidades</b>.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Nuevo Estado</label>
+                        <select name="nuevo_estado" class="form-select" required>
+                            {% for e in estados_posibles %}
+                                <option value="{{ e.id }}" {% if e.id == lote.estado_lote.id %}selected{% endif %}>
+                                    {{ e.codigo }} {% if e.es_vendible %}(Disponible){% else %}(Bloqueado){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold text-muted">Motivo</label>
+                        <textarea name="motivo" class="form-control" rows="2" placeholder="Ej: Liberación de cuarentena..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root { --text-main: #212529; --text-muted: #6c757d; --border-soft: #eaecf0; --accent-blue: #0d6efd; }
+    .hover-dark:hover { color: var(--text-main) !important; text-decoration: underline !important; }
+    .btn-chip { display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; background: white; color: var(--text-main); cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-soft); }
+    .btn-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .card-soft { border: 1px solid var(--border-soft); }
+    .ls-1 { letter-spacing: 0.5px; }
+    .extra-small { font-size: 0.75rem; }
+</style>
+{% endblock %}

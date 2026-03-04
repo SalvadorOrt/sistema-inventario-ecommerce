@@ -1,0 +1,285 @@
+{% extends "miapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="dash-wrap">
+    
+    <div class="dash-header mt-4 mb-4">
+        <div>
+            <h5 class="dash-subtitle text-muted text-uppercase ls-1" style="font-size: 0.75rem;">Gestión de Existencias</h5>
+            <h3 class="dash-title fw-bold text-dark">Inventario Global por Lote</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn-chip" style="background-color: white; border: 1px solid var(--border-soft); color: var(--text-main);">
+                <i class="bi bi-file-earmark-excel me-2"></i> Exportar
+            </button>
+        </div>
+    </div>
+
+    <div class="card-soft mb-4 p-4 bg-white rounded-4 shadow-sm border-0">
+        <form method="get" id="formFiltros">
+            
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="dash-subtitle mb-1 text-muted small fw-bold">Búsqueda Rápida</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-0 ps-3"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="q" value="{{ filtros.q }}" class="form-control bg-light border-0" placeholder="SKU, Producto, Lote...">
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="dash-subtitle mb-1 text-muted small fw-bold">Ordenar por</label>
+                    <select name="orden" class="form-select form-select-sm border-0 bg-light select2-enable" onchange="this.form.submit()">
+                        <option value="reciente" {% if filtros.orden == 'reciente' %}selected{% endif %}>Recientes (Ingreso)</option>
+                        <option value="fefo" {% if filtros.orden == 'fefo' %}selected{% endif %}>Por Vencer (FEFO)</option>
+                        <option value="nombre" {% if filtros.orden == 'nombre' %}selected{% endif %}>Nombre (A-Z)</option>
+                        <option value="ubicacion" {% if filtros.orden == 'ubicacion' %}selected{% endif %}>Ubicación Física</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="dash-subtitle mb-1 text-muted small fw-bold">Bodega</label>
+                    <select name="f_bodega" class="form-select form-select-sm border-0 bg-light select2-enable">
+                        <option value="">Todas</option>
+                        {% for b in bodegas %}
+                            <option value="{{ b.id }}" {% if filtros.f_bodega == b.id %}selected{% endif %}>{{ b.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="dash-subtitle mb-1 text-muted small fw-bold">Alertas de Stock</label>
+                    <select name="f_alerta" class="form-select form-select-sm border-0 bg-light select2-enable">
+                        <option value="">-- Ver Todo --</option>
+                        <option value="vencidos" {% if filtros.f_alerta == 'vencidos' %}selected{% endif %}>Productos Vencidos</option>
+                        <option value="por_vencer_30" {% if filtros.f_alerta == 'por_vencer_30' %}selected{% endif %}>Vencen en 30 días</option>
+                        <option value="por_vencer_60" {% if filtros.f_alerta == 'por_vencer_60' %}selected{% endif %}>Vencen en 60 días</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex gap-2 justify-content-end">
+                    <button type="submit" class="btn-chip w-100 justify-content-center primary">
+                        Filtrar
+                    </button>
+                    <button type="button" class="btn-chip" data-bs-toggle="collapse" data-bs-target="#filtrosAvanzados" aria-expanded="false" style="background-color: #f8f9fa; border: 1px solid var(--border-soft); color: var(--text-main);" title="Más filtros">
+                        <i class="bi bi-sliders"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="collapse mt-3 {% if filtros_avanzados %}show{% endif %}" id="filtrosAvanzados">
+                <div class="row g-2 pt-3 border-top border-light align-items-end">
+                    
+                    <div class="col-md-3">
+                        <label class="dash-subtitle mb-1 text-muted small fw-bold">Marca</label>
+                        <select name="f_marca" class="form-select form-select-sm border-0 bg-light select2-enable">
+                            <option value="">Todas</option>
+                            {% for m in marcas %}
+                                <option value="{{ m.id }}" {% if filtros.f_marca == m.id %}selected{% endif %}>{{ m.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="dash-subtitle mb-1 text-muted small fw-bold">Categoría</label>
+                        <select name="f_cat" class="form-select form-select-sm border-0 bg-light select2-enable">
+                            <option value="">Todas</option>
+                            {% for c in categorias %}
+                                <option value="{{ c.id }}" {% if filtros.f_cat == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="dash-subtitle mb-1 text-muted small fw-bold">Proveedor</label>
+                        <select name="f_proveedor" class="form-select form-select-sm border-0 bg-light select2-enable">
+                            <option value="">Todos</option>
+                            {% for p in proveedores %}
+                                <option value="{{ p.id }}" {% if filtros.f_proveedor == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-end justify-content-end">
+                        <a href="{% url 'miapp:inventario_global_consulta' %}" class="btn-chip w-100 justify-content-center text-decoration-none" style="color: #dc3545; border-color: #f5c6cb; background-color: #fff;">
+                            <i class="bi bi-trash3 me-2"></i> Limpiar Todo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card bg-white rounded-4 shadow-sm overflow-hidden">
+        <div class="card-header-compact px-4 py-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <div class="h-title fw-bold text-dark">Existencias</div>
+                <div class="h-sub text-muted extra-small">Mostrando página {{ items.number }} de {{ items.paginator.num_pages }}</div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-elegant table align-middle mb-0 table-hover">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted small fw-bold text-uppercase border-0">Producto / SKU</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase border-0">Ubicación</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase border-0">Lote / Fecha Clave</th>
+                        <th class="text-center py-3 text-muted small fw-bold text-uppercase border-0">Estado</th>
+                        <th class="text-end pe-4 py-3 text-muted small fw-bold text-uppercase border-0">Stock</th>
+                        <th class="text-end pe-4 py-3 text-muted small fw-bold text-uppercase border-0">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr class="border-bottom border-light">
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    
+                                    <div style="width: 48px; height: 48px; min-width: 48px; border-radius: 8px; background:#f8f9fa; border: 1px solid var(--border-soft); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                        {% with img=item.producto.imagenes.first %}
+                                            {% if img and img.imagen %}
+                                                <img src="{{ img.imagen.url }}" alt="{{ item.producto.nombre }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                            {% else %}
+                                                <i class="bi bi-box-seam text-muted opacity-50 fs-5"></i>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <div class="fw-bold text-dark mb-1" style="font-size: 0.9rem; line-height: 1.2;">
+                                            {{ item.producto.nombre|default:"(Sin Nombre)" }}
+                                        </div>
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <span class="text-muted extra-small font-monospace">SKU: {{ item.producto.codigo_sku }}</span>
+                                            <span class="badge bg-light text-muted border fw-normal" style="font-size: 9px;">{{ item.producto.marca.nombre|default:"Genérico" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="text-dark small fw-bold">{{ item.ubicacion.rack.zona.bodega.nombre }}</span>
+                                    <span class="text-muted extra-small">
+                                        <i class="bi bi-geo me-1"></i>{{ item.ubicacion.codigo_celda }}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="text-main small fw-bold font-monospace">{{ item.lote }}</span>
+                                    
+                                    {% if item.producto.estrategia_salida == 'FEFO' %}
+                                        {% if item.fecha_caducidad %}
+                                            {% if item.fecha_caducidad < hoy %}
+                                                <span class="text-danger extra-small fw-bold" title="Producto Vencido">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Venció: {{ item.fecha_caducidad|date:"d/m/Y" }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted extra-small">
+                                                    <i class="bi bi-calendar-event me-1"></i>Vence: {{ item.fecha_caducidad|date:"d/m/Y" }}
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-warning extra-small">Sin fecha caducidad</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-primary text-opacity-75 extra-small" title="Estrategia FIFO: Rige fecha de ingreso">
+                                            <i class="bi bi-box-arrow-in-down me-1"></i>Ingreso: {{ item.fecha_entrada|date:"d/m/Y" }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <td class="text-center">
+                                {% if item.estado_lote.es_vendible %}
+                                    <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 extra-small fw-bold">
+                                        {{ item.estado_lote.codigo }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 extra-small fw-bold">
+                                        {{ item.estado_lote.codigo }}
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="fw-bold text-dark fs-6">{{ item.cantidad_disponible }}</div>
+                                <div class="text-muted extra-small">{{ item.producto.clase_producto.codigo }}</div>
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <a href="{% url 'miapp:lote_detail' item.id %}" class="btn-chip" style="padding: 6px 12px; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d;" title="Ver detalle de {{ item.producto.nombre }}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="mb-2 text-muted opacity-25"><i class="bi bi-box2 fs-1"></i></div>
+                                <p class="text-muted small">No hay inventario que coincida con los filtros.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if items.has_other_pages %}
+        <div class="card-footer bg-white border-top border-light p-3">
+            <nav aria-label="Navegación de inventario">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% if items.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link border-0 text-dark" href="?page={{ items.previous_page_number }}&q={{ filtros.q }}&f_bodega={{ filtros.f_bodega }}&orden={{ filtros.orden }}&f_alerta={{ filtros.f_alerta }}&f_marca={{ filtros.f_marca }}&f_cat={{ filtros.f_cat }}&f_proveedor={{ filtros.f_proveedor }}">&laquo; Anterior</a>
+                        </li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link border-0 text-muted">Página {{ items.number }} de {{ items.paginator.num_pages }}</span></li>
+                    {% if items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link border-0 text-dark" href="?page={{ items.next_page_number }}&q={{ filtros.q }}&f_bodega={{ filtros.f_bodega }}&orden={{ filtros.orden }}&f_alerta={{ filtros.f_alerta }}&f_marca={{ filtros.f_marca }}&f_cat={{ filtros.f_cat }}&f_proveedor={{ filtros.f_proveedor }}">Siguiente &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    :root { --text-main: #212529; --text-muted: #6c757d; --border-soft: #eaecf0; --accent-blue: #0d6efd; }
+    
+    .btn-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; background: white; color: var(--text-main); cursor: pointer; transition: all 0.2s; text-decoration: none; border: 1px solid var(--border-soft); }
+    .btn-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .btn-chip.primary { background-color: var(--accent-blue); color: white; border: none; }
+    .btn-chip.primary:hover { background-color: #0b5ed7; }
+
+    .card-soft { border: 1px solid var(--border-soft); }
+    .ls-1 { letter-spacing: 0.5px; }
+    .extra-small { font-size: 0.75rem; }
+    .form-control:focus, .form-select:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1); }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.select2-enable').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: "Seleccionar...",
+            allowClear: true,
+            minimumResultsForSearch: 5
+        });
+    });
+</script>
+{% endblock %}

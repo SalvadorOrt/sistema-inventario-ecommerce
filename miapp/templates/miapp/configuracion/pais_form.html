@@ -1,0 +1,85 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card-soft shadow-sm border-0 p-4">
+
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h4 class="mb-0 fw-bold">{{ modo }} País</h4>
+                    <a href="{% url 'miapp:paises_gestion' %}" class="btn-close"></a>
+                </div>
+
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="dash-subtitle mb-1">Nombre del País</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger small">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="dash-subtitle mb-1">Código ISO</label>
+                        {{ form.codigo_iso }}
+                        <div class="form-text small">Código estándar (ej. EC para Ecuador).</div>
+                        {% if form.codigo_iso.errors %}
+                            <div class="text-danger small">{{ form.codigo_iso.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Switch alineado -->
+                    <div class="mb-4 bg-light p-3 rounded border">
+                        <div class="switch-row">
+                            {{ form.es_activo }}
+                            <label class="switch-label fw-bold" for="{{ form.es_activo.id_for_label }}">
+                                Habilitado para registros
+                            </label>
+                        </div>
+                        {% if form.es_activo.errors %}
+                            <div class="text-danger small mt-1">{{ form.es_activo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold shadow-sm">
+                            Guardar País
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Fila consistente para switches */
+.switch-row{
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-height: 2rem;
+}
+
+/* Asegura que el input del switch no se desplace */
+.switch-row .form-check-input{
+    width: 3em;
+    height: 1.5em;
+    margin: 0;
+    float: none;
+    vertical-align: middle;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.switch-label{
+    margin: 0;
+    line-height: 1.2;
+    cursor: pointer;
+}
+</style>
+{% endblock %}

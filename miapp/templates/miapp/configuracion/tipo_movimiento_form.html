@@ -1,0 +1,64 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8 col-lg-6">
+            <div class="card-soft shadow-sm border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h4 class="mb-0 fw-bold">{{ modo }} Tipo de Movimiento</h4>
+                    <a href="{% url 'miapp:tipos_movimiento_gestion' %}" class="btn-close"></a>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="dash-subtitle mb-1">Código Único</label>
+                        {{ form.codigo }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="dash-subtitle mb-1">Descripción</label>
+                        {{ form.descripcion }}
+                    </div>
+
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">Reglas de Negocio</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 border-end">
+                            <div class="form-check form-switch mb-3 ps-0 d-flex justify-content-between">
+                                <label class="form-check-label fw-bold" for="{{ form.afecta_stock.id_for_label }}">Afecta Stock</label>
+                                {{ form.afecta_stock }}
+                            </div>
+                            <div class="form-check form-switch mb-3 ps-0 d-flex justify-content-between">
+                                <label class="form-check-label text-success fw-bold" for="{{ form.es_entrada.id_for_label }}">Es Entrada (+)</label>
+                                {{ form.es_entrada }}
+                            </div>
+                            <div class="form-check form-switch ps-0 d-flex justify-content-between">
+                                <label class="form-check-label text-danger fw-bold" for="{{ form.es_salida.id_for_label }}">Es Salida (-)</label>
+                                {{ form.es_salida }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3 ps-0 d-flex justify-content-between">
+                                <label class="form-check-label" for="{{ form.requiere_pedido.id_for_label }}">Requiere Pedido</label>
+                                {{ form.requiere_pedido }}
+                            </div>
+                            <div class="form-check form-switch mb-3 ps-0 d-flex justify-content-between">
+                                <label class="form-check-label" for="{{ form.requiere_motivo_detallado.id_for_label }}">Motivo Detallado</label>
+                                {{ form.requiere_motivo_detallado }}
+                            </div>
+                            <div class="form-check form-switch ps-0 d-flex justify-content-between">
+                                <label class="form-check-label fw-bold" for="{{ form.es_activo.id_for_label }}">Activo</label>
+                                {{ form.es_activo }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold">Guardar Configuración</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<style>.form-switch .form-check-input { width: 2.8em; height: 1.4em; cursor: pointer; float: none; vertical-align: middle; }</style>
+{% endblock %}

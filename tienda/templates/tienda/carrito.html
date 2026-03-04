@@ -1,0 +1,276 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* =========================================
+       ESTILOS DEL CARRITO
+       ========================================= */
+    .cart-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 350px; /* Columna ancha + Columna resumen */
+        gap: 40px;
+        padding: 40px 0;
+        align-items: start;
+    }
+
+    /* --- TABLA DE PRODUCTOS --- */
+    .cart-items-container {
+        background: white;
+        border: 1px solid #eaeaea;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    .cart-header-title {
+        font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; 
+        padding-bottom: 15px; border-bottom: 2px solid #f5f5f5;
+    }
+
+    .cart-table { width: 100%; border-collapse: collapse; }
+    .cart-table th { 
+        text-align: left; padding: 15px; color: #888; font-size: 0.85rem; 
+        text-transform: uppercase; letter-spacing: 0.5px; 
+    }
+    .cart-table td { padding: 20px 15px; border-bottom: 1px solid #f9f9f9; vertical-align: middle; }
+    
+    /* Producto Info */
+    .item-flex { display: flex; align-items: center; gap: 20px; }
+    .item-img { 
+        width: 70px; height: 70px; object-fit: contain; 
+        border: 1px solid #eee; border-radius: 8px; padding: 5px;
+    }
+    .item-details h4 { font-size: 0.95rem; font-weight: 700; margin: 0 0 5px 0; }
+    .item-sku { font-size: 0.75rem; color: #999; font-family: monospace; }
+
+    /* Control de Cantidad (+ / -) */
+    .qty-control {
+        display: flex; align-items: center; border: 1px solid #ddd; border-radius: 6px; width: fit-content;
+    }
+    .qty-btn {
+        background: #fff; border: none; width: 32px; height: 32px; 
+        cursor: pointer; font-weight: bold; color: #555; transition: 0.2s;
+    }
+    .qty-btn:hover { background: #f5f5f5; color: #000; }
+    .qty-value {
+        width: 35px; text-align: center; font-size: 0.9rem; font-weight: 600; 
+        border: none; outline: none; background: transparent;
+    }
+
+    /* Precio y Subtotal */
+    .price-text { font-weight: 500; color: #555; }
+    .subtotal-text { font-weight: 800; color: #000; font-size: 1.05rem; }
+
+    /* Botón Eliminar */
+    .btn-delete {
+        color: #ccc; background: none; border: none; cursor: pointer; transition: 0.2s;
+    }
+    .btn-delete:hover { color: var(--color-danger, #ef4444); transform: scale(1.1); }
+
+    /* --- RESUMEN DE PEDIDO (Sticky) --- */
+    .cart-summary {
+        background: #f8f9fa; border: 1px solid #eee; border-radius: 12px;
+        padding: 30px; position: sticky; top: 110px; /* Se queda fijo al hacer scroll */
+    }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.95rem; color: #555; }
+    .total-row { 
+        font-size: 1.4rem; font-weight: 800; color: #000; 
+        border-top: 2px solid #ddd; padding-top: 20px; margin-top: 15px; 
+    }
+
+    .btn-checkout {
+        background: #000; color: white; width: 100%; padding: 15px;
+        border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; 
+        cursor: pointer; margin-top: 25px; transition: 0.2s; text-transform: uppercase;
+        display: block; text-align: center; text-decoration: none;
+    }
+    .btn-checkout:hover { background: #333; transform: translateY(-2px); color: white; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .cart-wrapper { grid-template-columns: 1fr; }
+        .cart-table thead { display: none; } /* Ocultar headers en móvil */
+        .cart-table tr { display: flex; flex-direction: column; border-bottom: 1px solid #eee; padding: 20px 0; align-items: center; text-align: center; }
+        .cart-table td { border: none; padding: 10px 0; width: 100%; }
+        .item-flex { flex-direction: column; text-align: center; }
+    }
+</style>
+
+<div class="container">
+    
+    {% if items %}
+    <div class="cart-wrapper">
+        
+        <div class="cart-items-container">
+            <h1 class="cart-header-title">Tu Carrito ({{ carrito.total_items }} items)</h1>
+            
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Producto</th>
+                        <th>Precio</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr id="row-{{ item.id }}">
+                        <td>
+                            <div class="item-flex">
+                                <a href="{% url 'tienda:producto_detalle' item.producto.id %}">
+                                    {% with foto=item.producto.imagenes.first %}
+                                        <img src="{% if foto %}{{ foto.imagen.url }}{% else %}{% static 'img/no-image.png' %}{% endif %}" class="item-img">
+                                    {% endwith %}
+                                </a>
+                                <div class="item-details">
+                                    <a href="{% url 'tienda:producto_detalle' item.producto.id %}">
+                                        <h4>{{ item.producto.nombre }}</h4>
+                                    </a>
+                                    <div class="item-sku">SKU: {{ item.producto.codigo_sku }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td><span class="price-text">${{ item.producto.precio_venta }}</span></td>
+
+                        <td>
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="updateCartQty('{{ item.id }}', 'restar')">-</button>
+                                
+                                <input type="text" class="qty-value" id="qty-{{ item.id }}" value="{{ item.cantidad }}" readonly>
+                                
+                                <button class="qty-btn" onclick="updateCartQty('{{ item.id }}', 'sumar')">+</button>
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="subtotal-text" id="subtotal-{{ item.id }}">
+                                ${{ item.subtotal }}
+                            </span>
+                        </td>
+
+                        <td style="text-align: right;">
+                            <a href="{% url 'tienda:eliminar_item' item.id %}" class="btn-delete" title="Eliminar">
+                                <span class="material-icons-round">delete_outline</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <a href="{% url 'tienda:catalogo' %}" style="display:inline-block; margin-top:20px; text-decoration:underline; font-weight:600; font-size:0.9rem;">
+                ← Continuar Comprando
+            </a>
+        </div>
+
+        <div class="cart-summary">
+            <h3 style="font-weight:800; margin-bottom:25px;">Resumen del Pedido</h3>
+            
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span id="cart-subtotal-display">${{ carrito.total }}</span>
+            </div>
+            
+            <div class="summary-row">
+                <span>Impuestos (IVA)</span>
+                <span class="text-muted">Incluido</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Envío</span>
+                <span style="color:#22c55e; font-weight:700;">Gratis</span>
+            </div>
+
+            <div class="summary-row total-row">
+                <span>Total</span>
+                <span id="cart-total-display">${{ carrito.total }}</span>
+            </div>
+
+            <a href="{% url 'tienda:checkout' %}" class="btn-checkout">
+                Procesar Compra <span class="material-icons-round" style="vertical-align:middle; font-size:18px;">arrow_forward</span>
+            </a>
+            
+            <div style="margin-top:20px; font-size:0.75rem; color:#888; text-align:center;">
+                <span class="material-icons-round" style="font-size:12px;">lock</span> Pagos 100% Seguros
+            </div>
+        </div>
+
+    </div>
+    {% else %}
+    
+    <div style="text-align: center; padding: 80px 20px;">
+        <div style="background:#f9f9f9; width:100px; height:100px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px auto;">
+            <span class="material-icons-round" style="font-size: 48px; color: #ccc;">shopping_cart_off</span>
+        </div>
+        <h2 style="font-weight: 800; margin-bottom: 10px;">Tu carrito está vacío</h2>
+        <p style="color: #666; max-width: 400px; margin: 0 auto 30px auto;">Parece que aún no has agregado nada. Explora nuestro catálogo y encuentra lo que buscas.</p>
+        <a href="{% url 'tienda:catalogo' %}" class="btn-checkout" style="width: auto; padding: 15px 40px; display:inline-block;">
+            Ir a la Tienda
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function updateCartQty(itemId, action) {
+        // Bloquear UI momentáneamente para evitar doble click
+        const qtyInput = document.getElementById(`qty-${itemId}`);
+        const currentVal = parseInt(qtyInput.value);
+
+        if (action === 'restar' && currentVal <= 1) return; // No bajar de 1
+
+        // Efecto visual de carga (opacidad)
+        document.getElementById(`row-${itemId}`).style.opacity = '0.5';
+
+        fetch(`/online/carrito/actualizar/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `accion=${action}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Restaurar opacidad
+            document.getElementById(`row-${itemId}`).style.opacity = '1';
+
+            if (data.status === 'success') {
+                // 1. Actualizar Input de Cantidad
+                qtyInput.value = data.cantidad;
+                
+                // 2. Actualizar Subtotal Fila
+                document.getElementById(`subtotal-${itemId}`).innerText = '$' + parseFloat(data.subtotal).toFixed(2);
+                
+                // 3. Actualizar Total Global (Resumen)
+                const totalFmt = '$' + parseFloat(data.carrito_total).toFixed(2);
+                document.getElementById('cart-subtotal-display').innerText = totalFmt;
+                document.getElementById('cart-total-display').innerText = totalFmt;
+                
+                // 4. Actualizar Burbuja del Navbar (Header)
+                const navCounts = document.querySelectorAll('.cart-count');
+                navCounts.forEach(el => el.innerText = data.total_items);
+
+            } else {
+                // Mensaje de Error (Ej: Stock Máximo)
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: data.message || 'No se pudo actualizar',
+                    confirmButtonColor: '#000'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById(`row-${itemId}`).style.opacity = '1';
+        });
+    }
+</script>
+{% endblock %}

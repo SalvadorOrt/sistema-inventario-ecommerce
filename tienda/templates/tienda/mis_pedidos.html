@@ -1,0 +1,86 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .history-container { padding: 40px 0; min-height: 60vh; }
+    .page-title { font-weight: 800; margin-bottom: 30px; border-bottom: 2px solid #f5f5f5; padding-bottom: 15px; }
+    
+    /* Tabla */
+    .table-custom { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-custom th { background: #f9f9f9; padding: 15px; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; border-bottom: 2px solid #eaeaea; }
+    .table-custom td { padding: 15px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; font-size: 0.9rem; }
+    .table-custom tr:hover td { background-color: #fafafa; }
+
+    /* Badges */
+    .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; display: inline-block; min-width: 80px; text-align: center; }
+    .st-solicitado { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; } /* Pendiente */
+    .st-preparacion { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; } /* En proceso */
+    .st-entregado { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; } /* Finalizado */
+    .st-anulado { background: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
+
+    .back-link { text-decoration: none; color: #666; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; margin-bottom: 20px; }
+    .back-link:hover { color: #000; }
+</style>
+
+<div class="container history-container">
+    
+    <a href="{% url 'tienda:mi_perfil' %}" class="back-link">
+        <span class="material-icons-round" style="font-size: 16px;">arrow_back</span> Volver a Mi Perfil
+    </a>
+
+    <h1 class="page-title">Historial de Pedidos</h1>
+
+    {% if pedidos %}
+        <div class="card border-0 shadow-sm" style="overflow: hidden; border-radius: 12px;">
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>N° Orden</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Items</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td class="fw-bold">#{{ pedido.id|stringformat:"05d" }}</td>
+                            <td>{{ pedido.fecha_creacion|date:"d M Y" }}</td>
+                            <td class="fw-bold">${{ pedido.total }}</td>
+                            <td>
+                                {% with cod=pedido.estado_pedido.codigo %}
+                                    <span class="status-badge 
+                                        {% if cod == 'SOLICITADO' %}st-solicitado
+                                        {% elif cod == 'PREPARACION' %}st-preparacion
+                                        {% elif cod == 'ENTREGADO' %}st-entregado
+                                        {% else %}st-anulado{% endif %}">
+                                        {{ pedido.estado_pedido.descripcion }}
+                                    </span>
+                                {% endwith %}
+                            </td>
+                            <td>{{ pedido.detalles.count }} productos</td>
+                            <td class="text-end">
+                                <a href="{% url 'tienda:detalle_compra' pedido.id %}" class="btn btn-sm btn-outline-dark fw-bold">
+                                    Ver Detalle
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <span class="material-icons-round text-muted" style="font-size: 64px;">history</span>
+            <h3 class="fw-bold mt-3">Aún no tienes pedidos</h3>
+            <p class="text-muted">Explora nuestro catálogo y realiza tu primera compra.</p>
+            <a href="{% url 'tienda:catalogo' %}" class="btn btn-dark mt-2">Ir a la Tienda</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

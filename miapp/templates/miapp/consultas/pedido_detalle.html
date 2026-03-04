@@ -1,0 +1,138 @@
+{% extends "miapp/base.html" %}
+{% block content %}
+<div class="dash-wrap pb-5">
+    <div class="dash-header mt-3 d-print-none border-bottom pb-3">
+        <div>
+            <div class="text-muted small mb-1">Comercial <i class="bi bi-chevron-right mx-1"></i> Auditoría</div>
+            <h3 class="dash-title fw-bold text-dark">Pedido: {{ pedido.codigo }}</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm px-3"><i class="bi bi-printer me-2"></i>Imprimir</button>
+            <a href="{% url 'miapp:pedidos_consulta' %}" class="btn btn-light border btn-sm px-3">Volver</a>
+        </div>
+    </div>
+
+    <div class="row mt-4 g-4">
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark">Desglose de Ítems y Rentabilidad</h6>
+                    <span class="badge bg-light text-dark border">
+                        {{ pedido.detalles.count }} líneas
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-small">
+                        <thead class="bg-light small text-uppercase text-muted">
+                            <tr>
+                                <th class="ps-4">Producto</th>
+                                <th class="text-center">Cant.</th>
+                                <th>Estado Logístico</th>
+                                <th class="text-end">P. Venta</th>
+                                <th class="text-end text-muted fst-italic">Costo Unit.</th> <th class="text-end">Total Línea</th>
+                                <th class="text-end pe-4 text-success">Ganancia</th> </tr>
+                        </thead>
+                        <tbody>
+                            {% for det in pedido.detalles.all %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark small">{{ det.producto.nombre }}</div>
+                                    <div class="extra-small text-muted">SKU: {{ det.producto.codigo_sku }}</div>
+                                </td>
+                                <td class="text-center fw-bold">{{ det.cantidad_solicitada }}</td>
+                                <td>
+                                    {% if det.estado_logistico == 'ESPERANDO_TRASPASO' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger">
+                                            <i class="bi bi-exclamation-octagon-fill me-1"></i>Sin Stock
+                                        </span>
+                                    {% elif det.estado_logistico == 'DISPONIBLE' %}
+                                        <span class="badge bg-success-subtle text-success border border-success">
+                                            <i class="bi bi-check2 me-1"></i>OK
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border">{{ det.get_estado_logistico_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">${{ det.precio_unitario|floatformat:2 }}</td>
+                                
+                                <td class="text-end text-muted fst-italic small">${{ det.costo_unitario|floatformat:2 }}</td>
+                                
+                                <td class="text-end fw-bold">${{ det.total_linea|floatformat:2 }}</td>
+                                
+                                <td class="text-end pe-4">
+                                    {% if det.ganancia > 0 %}
+                                        <span class="text-success fw-bold small">+ ${{ det.ganancia|floatformat:2 }}</span>
+                                    {% else %}
+                                        <span class="text-danger fw-bold small">{{ det.ganancia|floatformat:2 }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="alert alert-light border shadow-sm mt-3">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Diagnóstico del Pedido</h6>
+                        <p class="mb-0 small text-muted">
+                            Este pedido se encuentra en estado <strong>{{ pedido.estado_pedido.descripcion }}</strong>. 
+                            {% if pedido.ganancia_total < 0 %}
+                                <span class="text-danger fw-bold">ATENCIÓN: Este pedido está generando pérdidas contables. Revisar costos.</span>
+                            {% else %}
+                                El margen de utilidad global es del <strong class="text-dark">{{ margen_porcentaje|floatformat:1 }}%</strong>.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 mb-3">
+                <label class="small text-muted fw-bold text-uppercase border-bottom pb-2 mb-2 d-block">Cliente</label>
+                <div class="fw-bold text-dark">{{ pedido.cliente.nombres }} {{ pedido.cliente.apellidos }}</div>
+                <div class="small text-muted">{{ pedido.cliente.numero_identificacion }}</div>
+                <div class="small text-muted mt-1"><i class="bi bi-geo-alt me-1"></i>{{ pedido.cliente.pais.nombre }}</div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-3 mb-3">
+                <label class="small text-muted fw-bold text-uppercase border-bottom pb-2 mb-2 d-block">Vendedor</label>
+                <div class="d-flex align-items-center">
+                    <div class="bg-light rounded-circle p-2 me-2"><i class="bi bi-person text-secondary"></i></div>
+                    <div>
+                        <div class="fw-bold small">{{ pedido.usuario.username }}</div>
+                        <div class="extra-small text-muted">ID: {{ pedido.usuario.id }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-3 bg-white border-top border-primary border-4">
+                <div class="d-flex justify-content-between mb-1 small">
+                    <span class="text-muted">Subtotal:</span>
+                    <span>${{ pedido.subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3 small">
+                    <span class="text-muted">IVA:</span>
+                    <span>${{ pedido.monto_iva|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between border-top pt-2">
+                    <span class="fw-bold fs-5">TOTAL:</span>
+                    <span class="fw-bold fs-5">${{ pedido.total|floatformat:2 }}</span>
+                </div>
+                
+                <div class="mt-3 pt-2 border-top text-center">
+                    <span class="badge bg-success-subtle text-success border border-success px-3">
+                        Utilidad Neta: ${{ pedido.ganancia_total|floatformat:2 }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
